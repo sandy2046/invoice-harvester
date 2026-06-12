@@ -1,0 +1,580 @@
+/* 基础样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 50%, #0d1520 100%);
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  color: #e0e6ed;
+  overflow-x: hidden;
+}
+
+/* 星星背景 */
+.stars {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: 
+    radial-gradient(3px 3px at 15% 25%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(2px 2px at 35% 65%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(3px 3px at 55% 15%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(2px 2px at 75% 45%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(3px 3px at 95% 85%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(2px 2px at 20% 80%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(3px 3px at 65% 75%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(2px 2px at 90% 35%, rgba(255,255,255,0.6), transparent);
+  background-repeat: repeat;
+  background-size: 800px 500px;
+}
+
+/* 容器 */
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 标题 */
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 42px;
+  background: linear-gradient(135deg, #00d4ff, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(0,212,255,0.3);
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 16px;
+  margin-top: 5px;
+}
+
+/* 卡片 */
+.card {
+  background: rgba(20, 15, 60, 0.9);
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid transparent;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0,212,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+  backdrop-filter: blur(15px);
+  margin-bottom: 20px;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 16px;
+  padding: 2px;
+  background: linear-gradient(135deg, #00d4ff, #a855f7, #ec4899);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.card h2, .card h3 {
+  margin-bottom: 16px;
+  color: #60a5fa;
+}
+
+/* 输入组 */
+.input-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.input-group input {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 16px;
+  border: 2px solid rgba(120,80,255,0.3);
+  border-radius: 8px;
+  background: rgba(10,8,40,0.8);
+  color: #e0e6ed;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #60a5fa;
+}
+
+/* 按钮 */
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: none;
+  position: relative;
+  z-index: 1;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+}
+
+.btn-secondary {
+  background: rgba(100,116,139,0.3);
+  color: #e0e6ed;
+  border: 1px solid rgba(100,116,139,0.5);
+}
+
+.btn-danger {
+  background: rgba(239,68,68,0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.5);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+
+.btn-large {
+  padding: 16px 32px;
+  font-size: 16px;
+}
+
+/* 隐藏 */
+.hidden {
+  display: none !important;
+}
+
+/* 大厅头部 */
+.lobby-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.player-info {
+  color: #60a5fa;
+  font-size: 16px;
+}
+
+.lobby-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* 房间列表 */
+.room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.room-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(120,80,255,0.2);
+  transition: all 0.2s;
+}
+
+.room-item:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(120,80,255,0.4);
+}
+
+.room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.room-id {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fbbf24;
+}
+
+.room-host {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.room-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-count {
+  font-size: 14px;
+  color: #4ade80;
+}
+
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+/* 房间头部 */
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.room-header h2 {
+  margin: 0;
+}
+
+#roomId {
+  color: #fbbf24;
+  font-family: monospace;
+}
+
+/* 玩家列表 */
+.players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(120,80,255,0.2);
+}
+
+.player-item.host {
+  border-color: rgba(251,191,36,0.5);
+  background: rgba(251,191,36,0.1);
+}
+
+.player-item.ready {
+  border-color: rgba(74,222,128,0.5);
+  background: rgba(74,222,128,0.1);
+}
+
+.player-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.player-details {
+  flex: 1;
+}
+
+.player-name {
+  font-weight: bold;
+  color: #e0e6ed;
+}
+
+.player-tag {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-left: 8px;
+}
+
+.player-status {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* 控制区域 */
+.host-controls, .player-controls {
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid rgba(120,80,255,0.2);
+}
+
+.hint {
+  margin-top: 12px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* 游戏区域 */
+.game-section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  background: rgba(10,8,40,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.game-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 700px;
+}
+
+.score-board {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(20,15,60,0.9);
+  padding: 12px 24px;
+  border-radius: 50px;
+  border: 2px solid rgba(0,212,255,0.3);
+}
+
+.score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.score-item .name {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.score-item .score {
+  font-size: 24px;
+  font-weight: bold;
+  color: #4ade80;
+}
+
+.vs {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fbbf24;
+}
+
+#gameCanvas {
+  border: 3px solid transparent;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(10,8,40,0.95), rgba(20,10,50,0.9)) padding-box,
+              linear-gradient(135deg, #00d4ff, #a855f7, #ec4899) border-box;
+  box-shadow: 0 0 30px rgba(0,212,255,0.4), 0 0 60px rgba(168,85,247,0.3);
+}
+
+.game-controls {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* 弹窗 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, rgba(20,15,60,0.95), rgba(35,20,70,0.9));
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  border: 2px solid rgba(0,212,255,0.3);
+  box-shadow: 0 0 40px rgba(0,212,255,0.3);
+  max-width: 400px;
+  width: 100%;
+}
+
+.modal-content h2 {
+  margin-bottom: 20px;
+  color: #60a5fa;
+}
+
+#gameOverResult {
+  margin-bottom: 24px;
+  font-size: 18px;
+}
+
+.winner {
+  color: #fbbf24;
+  font-weight: bold;
+}
+
+.loser {
+  color: #ef4444;
+}
+
+/* 模式选择卡片 */
+.mode-cards {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.mode-card {
+  flex: 1;
+  min-width: 240px;
+  max-width: 320px;
+  padding: 32px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(120, 80, 255, 0.2);
+  text-align: center;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.mode-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(120, 80, 255, 0.5);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 212, 255, 0.15);
+}
+
+.mode-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.mode-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #e0e6ed;
+  margin-bottom: 8px;
+}
+
+.mode-desc {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* 小按钮 */
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+/* 房间ID小字 */
+.room-id-small {
+  font-size: 13px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+/* 弹窗按钮组 */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.modal-actions .btn {
+  flex: 1;
+  min-width: 100px;
+}
+
+/* 单机分数板 */
+.single-score {
+  gap: 16px;
+}
+
+/* 创建房间弹窗输入框 */
+#createRoomModal .input-group input {
+  width: 100%;
+  text-align: center;
+  font-size: 16px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 32px;
+  }
+  
+  .lobby-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .lobby-actions {
+    justify-content: center;
+  }
+  
+  .room-item {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .game-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  #gameCanvas {
+    max-width: 100%;
+    height: auto;
+  }
+}

@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>财务人的噩梦：发票收割机</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #f5f0e8;
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #gameWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #hud {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border-radius: 10px 10px 0 0;
+    color: #ecf0f1;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 10;
+  }
+  #hud .hud-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #hud .hud-value {
+    color: #2ecc71;
+    font-size: 16px;
+    min-width: 60px;
+    text-align: right;
+  }
+  #hud .hud-value.warn {
+    color: #e74c3c;
+  }
+  canvas {
+    display: block;
+    border: 2px solid #2c3e50;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    background: #faf6ee;
+  }
+  /* 开始画面 */
+  #startScreen, #gameOverScreen {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(44, 62, 80, 0.92);
+    border-radius: 10px;
+    z-index: 20;
+    color: #ecf0f1;
+    text-align: center;
+    padding: 20px;
+    transition: opacity 0.3s;
+  }
+  #startScreen.hidden, #gameOverScreen.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .screen-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  .screen-subtitle {
+    font-size: 15px;
+    color: #bdc3c7;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .screen-emoji {
+    font-size: 60px;
+    margin-bottom: 15px;
+    animation: bounce 1.5s infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+  .btn {
+    padding: 12px 36px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    box-shadow: 0 4px 12px rgba(46,204,113,0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin-top: 10px;
+  }
+  .btn:hover { transform: scale(1.05); box-shadow: 0 6px 18px rgba(46,204,113,0.5); }
+  .btn:active { transform: scale(0.97); }
+  .legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
+    text-align: left;
+    font-size: 13px;
+    margin: 12px 0;
+    color: #bdc3c7;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-emoji { font-size: 20px; }
+  .final-score {
+    font-size: 42px;
+    font-weight: bold;
+    color: #f39c12;
+    margin: 8px 0;
+    text-shadow: 2px 2px 6px rgba(243,156,18,0.4);
+  }
+  .final-detail {
+    font-size: 14px;
+    color: #bdc3c7;
+    margin-bottom: 6px;
+  }
+  .reject-msg {
+    font-size: 18px;
+    color: #e74c3c;
+    font-weight: bold;
+    margin: 10px 0 5px;
+  }
+  /* 移动端方向按钮 */
+  #mobileControls {
+    display: none;
+    margin-top: 12px;
+    position: relative;
+    width: 160px;
+    height: 160px;
+  }
+  .d-btn {
+    position: absolute;
+    width: 52px; height: 52px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(44,62,80,0.75);
+    color: #ecf0f1;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: background 0.1s;
+  }
+  .d-btn:active { background: rgba(44,62,80,0.95); }
+  .d-btn.up    { top: 0; left: 50%; transform: translateX(-50%); }
+  .d-btn.down  { bottom: 0; left: 50%; transform: translateX(-50%); }
+  .d-btn.left  { top: 50%; left: 0; transform: translateY(-50%); }
+  .d-btn.right { top: 50%; right: 0; transform: translateY(-50%); }
+  @media (pointer: coarse) {
+    #mobileControls { display: block; }
+  }
+  @media (max-width: 640px) {
+    #hud { font-size: 12px; padding: 6px 8px; }
+    #hud .hud-value { font-size: 14px; min-width: 50px; }
+    .screen-title { font-size: 22px; }
+    .screen-emoji { font-size: 48px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="gameWrapper">
+  <div id="hud">
+    <div class="hud-item">
+      <span>💰 报销总额：</span>
+      <span class="hud-value" id="scoreDisplay">¥0</span>
+    </div>
+    <div class="hud-item">
+      <span>📄 发票数：</span>
+      <span class="hud-value" id="invoiceDisplay">0 张</span>
+    </div>
+    <div class="hud-item">
+      <span>⚡ 速度：</span>
+      <span class="hud-value" id="speedDisplay">×1.0</span>
+    </div>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- 开始画面 -->
+  <div id="startScreen">
+    <div class="screen-emoji">🧾🐍</div>
+    <div class="screen-title">财务人的噩梦</div>
+    <div class="screen-subtitle">发票收割机</div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-emoji">🧑‍💼</span> 你（财务小人）</div>
+      <div class="legend-item"><span class="legend-emoji">🧾</span> 普通发票 +10</div>
+      <div class="legend-item"><span class="legend-emoji">🧾</span> 电子发票 +20</div>
+      <div class="legend-item"><span class="legend-emoji">🧾</span> 专用发票 +50</div>
+      <div class="legend-item"><span class="legend-emoji">💵</span> 蛇身（钞票）</div>
+      <div class="legend-item"><span class="legend-emoji">🚫</span> 假发票 = 游戏结束</div>
+    </div>
+    <div class="screen-subtitle" style="font-size:12px;">⌨️ 方向键 / 📱 滑动或点击按钮</div>
+    <button class="btn" id="startBtn">开始收割发票 🧾</button>
+  </div>
+
+  <!-- 游戏结束画面 -->
+  <div id="gameOverScreen" class="hidden">
+    <div class="screen-emoji">❌</div>
+    <div class="reject-msg">本次报销被驳回！</div>
+    <div class="screen-subtitle" id="rejectReason">财务部发现异常发票…</div>
+    <div class="final-score" id="finalScore">¥0</div>
+    <div class="final-detail" id="finalInvoices">共处理 0 张发票</div>
+    <div class="final-detail" id="finalSpeed">最终速度 ×1.0</div>
+    <button class="btn" id="restartBtn">再次挑战 🔄</button>
+  </div>
+</div>
+
+<!-- 移动端方向控制 -->
+<div id="mobileControls">
+  <button class="d-btn up" data-dir="up">▲</button>
+  <button class="d-btn down" data-dir="down">▼</button>
+  <button class="d-btn left" data-dir="left">◀</button>
+  <button class="d-btn right" data-dir="right">▶</button>
+</div>
+
+<script>
+// ============================================================
+//  《财务人的噩梦：发票收割机》 - 游戏主逻辑
+// ============================================================
+
+(() => {
+  'use strict';
+
+  // ---- 常量 & 配置 ----
+  const GRID = 20;                // 网格单元大小(px)
+  const BASE_SPEED = 150;         // 基础移动间隔(ms)
+  const SPEED_INCREMENT = 0.05;   // 每100分速度提升比例
+  const SCORE_SPEED_STEP = 100;   // 每多少分提速一次
+  const MAX_OBSTACLES_BASE = 2;   // 初始最大障碍物数
+  const OBSTACLE_GROWTH = 1;      // 每100分增加的障碍物上限
+
+  // 发票类型定义
+  const INVOICE_TYPES = [
+    { name: '普票',  score: 10, bg: '#ffffff', border: '#999',    emoji: '🧾', weight: 50 },
+    { name: '电子',  score: 20, bg: '#e8f5e9', border: '#4caf50', emoji: '🧾', weight: 30 },
+    { name: '专票',  score: 50, bg: '#e3f2fd', border: '#1976d2', emoji: '🧾', weight: 15 },
+  ];
+
+  // 驳回文案
+  const REJECT_MESSAGES = [
+    '财务部发现异常发票，报销申请已被驳回！',
+    '审计部门介入调查，所有发票需重新审核！',
+    '税务局发出预警，涉嫌虚开发票！',
+    '发票抬头与公司名称不符，全部退回！',
+    '系统检测到假发票，财务总监已介入！',
+    '连号发票被识别，请配合税务稽查！',
+  ];
+
+  // ---- DOM 引用 ----
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('scoreDisplay');
+  const invoiceEl = document.getElementById('invoiceDisplay');
+  const speedEl = document.getElementById('speedDisplay');
+  const startScreen = document.getElementById('startScreen');
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const finalScoreEl = document.getElementById('finalScore');
+  const finalInvoicesEl = document.getElementById('finalInvoices');
+  const finalSpeedEl = document.getElementById('finalSpeed');
+  const rejectReasonEl = document.getElementById('rejectReason');
+
+  // ---- 游戏状态 ----
+  let cols, rows;
+  let snake = [];
+  let direction = { x: 1, y: 0 };
+  let nextDirection = { x: 1, y: 0 };
+  let foods = [];
+  let obstacles = [];
+  let score = 0;
+  let invoiceCount = 0;
+  let speedMultiplier = 1.0;
+  let gameRunning = false;
+  let lastMoveTime = 0;
+  let animFrameId = null;
+  let shakeOffset = { x: 0, y: 0 };
+  let shakeDuration = 0;
+
+  // ---- 画布尺寸自适应 ----
+  function resizeCanvas() {
+    const maxW = Math.min(window.innerWidth - 20, 600);
+    const maxH = Math.min(window.innerHeight - 200, 600);
+    cols = Math.floor(maxW / GRID);
+    rows = Math.floor(maxH / GRID);
+    cols = Math.max(cols, 15);
+    rows = Math.max(rows, 15);
+    canvas.width = cols * GRID;
+    canvas.height = rows * GRID;
+  }
+
+  // ---- 工具函数 ----
+  function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function isOccupied(x, y) {
+    if (snake.some(s => s.x === x && s.y === y)) return true;
+    if (foods.some(f => f.x === x && f.y === y)) return true;
+    if (obstacles.some(o => o.x === x && o.y === y)) return true;
+    return false;
+  }
+
+  function randomFreeCell() {
+    let attempts = 0;
+    while (attempts < 500) {
+      const x = rand(0, cols - 1);
+      const y = rand(0, rows - 1);
+      if (!isOccupied(x, y)) return { x, y };
+      attempts++;
+    }
+    return null;
+  }
+
+  function weightedRandom(items) {
+    const total = items.reduce((s, i) => s + i.weight, 0);
+    let r = Math.random() * total;
+    for (const item of items) {
+      r -= item.weight;
+      if (r <= 0) return item;
+    }
+    return items[0];
+  }
+
+  // ---- 初始化游戏 ----
+  function initGame() {
+    resizeCanvas();
+    // 蛇初始位置：中间偏左
+    const startX = Math.floor(cols / 4);
+    const startY = Math.floor(rows / 2);
+    snake = [
+      { x: startX, y: startY },
+      { x: startX - 1, y: startY },
+      { x: startX - 2, y: startY },
+    ];
+    direction = { x: 1, y: 0 };
+    nextDirection = { x: 1, y: 0 };
+    score = 0;
+    invoiceCount = 0;
+    speedMultiplier = 1.0;
+    foods = [];
+    obstacles = [];
+    shakeOffset = { x: 0, y: 0 };
+    shakeDuration = 0;
+
+    // 生成初始食物
+    for (let i = 0; i < 3; i++) spawnFood();
+    // 生成初始障碍物
+    for (let i = 0; i < 1; i++) spawnObstacle();
+
+    updateHUD();
+  }
+
+  // ---- 生成食物 ----
+  function spawnFood() {
+    const cell = randomFreeCell();
+    if (!cell) return;
+    const type = weightedRandom(INVOICE_TYPES);
+    foods.push({ ...cell, ...type });
+  }
+
+  // ---- 生成障碍物 ----
+  function spawnObstacle() {
+    const cell = randomFreeCell();
+    if (!cell) return;
+    obstacles.push({ ...cell });
+  }
+
+  // ---- 更新 HUD ----
+  function updateHUD() {
+    scoreEl.textContent = `¥${score}`;
+    invoiceEl.textContent = `${invoiceCount} 张`;
+    speedEl.textContent = `×${speedMultiplier.toFixed(1)}`;
+    if (speedMultiplier >= 1.5) {
+      speedEl.classList.add('warn');
+    } else {
+      speedEl.classList.remove('warn');
+    }
+  }
+
+  // ---- 震动反馈 ----
+  function triggerShake(duration = 200) {
+    shakeDuration = duration;
+    if (navigator.vibrate) {
+      navigator.vibrate(100);
+    }
+  }
+
+  // ---- 碰撞检测 ----
+  function checkCollision(head) {
+    // 边界碰撞
+    if (head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows) return 'wall';
+    // 自身碰撞
+    for (let i = 1; i < snake.length; i++) {
+      if (snake[i].x === head.x && snake[i].y === head.y) return 'self';
+    }
+    // 障碍物碰撞
+    for (const obs of obstacles) {
+      if (obs.x === head.x && obs.y === head.y) return 'obstacle';
+    }
+    return null;
+  }
+
+  // ---- 游戏更新 ----
+  function update(timestamp) {
+    const moveInterval = BASE_SPEED / speedMultiplier;
+    if (timestamp - lastMoveTime < moveInterval) return;
+    lastMoveTime = timestamp;
+
+    // 应用方向
+    direction = { ...nextDirection };
+
+    // 计算新头部
+    const head = {
+      x: snake[0].x + direction.x,
+      y: snake[0].y + direction.y,
+    };
+
+    // 碰撞检测
+    const collision = checkCollision(head);
+    if (collision) {
+      gameOver();
+      return;
+    }
+
+    // 移动蛇
+    snake.unshift(head);
+
+    // 检查是否吃到食物
+    let ate = false;
+    for (let i = foods.length - 1; i >= 0; i--) {
+      if (foods[i].x === head.x && foods[i].y === head.y) {
+        score += foods[i].score;
+        invoiceCount++;
+        foods.splice(i, 1);
+        spawnFood();
+        ate = true;
+        triggerShake(150);
+        break;
+      }
+    }
+
+    if (!ate) {
+      snake.pop(); // 没吃到食物，移除尾巴
+    }
+
+    // 难度递增
+    const newMultiplier = 1 + Math.floor(score / SCORE_SPEED_STEP) * SPEED_INCREMENT;
+    if (newMultiplier !== speedMultiplier) {
+      speedMultiplier = newMultiplier;
+    }
+
+    // 动态调整障碍物数量
+    const maxObs = MAX_OBSTACLES_BASE + Math.floor(score / SCORE_SPEED_STEP) * OBSTACLE_GROWTH;
+    while (obstacles.length < maxObs) {
+      spawnObstacle();
+    }
+
+    // 确保食物数量
+    const targetFoods = Math.min(3 + Math.floor(score / 200), 6);
+    while (foods.length < targetFoods) {
+      spawnFood();
+    }
+
+    updateHUD();
+  }
+
+  // ---- 绘制背景（Excel 表格纹理） ----
+  function drawBackground() {
+    // 米黄底色
+    ctx.fillStyle = '#faf6ee';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 网格线（模拟 Excel）
+    ctx.strokeStyle = 'rgba(180, 190, 200, 0.25)';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x <= cols; x++) {
+      ctx.beginPath();
+      ctx.moveTo(x * GRID, 0);
+      ctx.lineTo(x * GRID, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= rows; y++) {
+      ctx.beginPath();
+      ctx.moveTo(0, y * GRID);
+      ctx.lineTo(canvas.width, y * GRID);
+      ctx.stroke();
+    }
+
+    // 行号列（模拟 Excel 行号）
+    ctx.fillStyle = 'rgba(180, 190, 200, 0.4)';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let y = 0; y < rows; y++) {
+      ctx.fillText(y + 1, GRID * 0.5, y * GRID + GRID * 0.5);
+    }
+  }
+
+  // ---- 绘制蛇 ----
+  function drawSnake() {
+    for (let i = snake.length - 1; i >= 0; i--) {
+      const seg = snake[i];
+      const px = seg.x * GRID;
+      const py = seg.y * GRID;
+      const padding = 1;
+
+      if (i === 0) {
+        // 蛇头：商务人士
+        ctx.font = `${GRID - 2}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🧑‍💼', px + GRID / 2, py + GRID / 2 + 1);
+      } else {
+        // 蛇身：钞票
+        const bodyEmojis = ['💵', '💰', '📃', '📄'];
+        const emoji = bodyEmojis[i % bodyEmojis.length];
+        ctx.font = `${GRID - 4}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, px + GRID / 2, py + GRID / 2 + 1);
+      }
+    }
+  }
+
+  // ---- 绘制食物（发票） ----
+  function drawFoods() {
+    for (const food of foods) {
+      const px = food.x * GRID;
+      const py = food.y * GRID;
+      const pad = 2;
+
+      // 发票背景
+      ctx.fillStyle = food.bg;
+      ctx.strokeStyle = food.border;
+      ctx.lineWidth = 1.5;
+      const rx = px + pad;
+      const ry = py + pad;
+      const rw = GRID - pad * 2;
+      const rh = GRID - pad * 2;
+      const r = 3;
+      ctx.beginPath();
+      ctx.moveTo(rx + r, ry);
+      ctx.lineTo(rx + rw - r, ry);
+      ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + r);
+      ctx.lineTo(rx + rw, ry + rh - r);
+      ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - r, ry + rh);
+      ctx.lineTo(rx + r, ry + rh);
+      ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - r);
+      ctx.lineTo(rx, ry + r);
+      ctx.quadraticCurveTo(rx, ry, rx + r, ry);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // 分值文字
+      ctx.fillStyle = food.border;
+      ctx.font = 'bold 9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`+${food.score}`, px + GRID / 2, py + GRID / 2);
+
+      // 类型标签（小字）
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.font = '6px sans-serif';
+      ctx.fillText(food.name, px + GRID / 2, py + GRID - 5);
+    }
+  }
+
+  // ---- 绘制障碍物（假发票） ----
+  function drawObstacles() {
+    for (const obs of obstacles) {
+      const px = obs.x * GRID;
+      const py = obs.y * GRID;
+
+      // 红色警告背景
+      ctx.fillStyle = 'rgba(231, 76, 60, 0.15)';
+      ctx.fillRect(px + 1, py + 1, GRID - 2, GRID - 2);
+
+      // Emoji
+      ctx.font = `${GRID - 4}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🚫', px + GRID / 2, py + GRID / 2 + 1);
+    }
+  }
+
+  // ---- 震动偏移更新 ----
+  function updateShake(timestamp) {
+    if (shakeDuration > 0) {
+      shakeDuration -= 16;
+      const intensity = Math.min(shakeDuration / 50, 1) * 3;
+      shakeOffset.x = (Math.random() - 0.5) * intensity * 2;
+      shakeOffset.y = (Math.random() - 0.5) * intensity * 2;
+    } else {
+      shakeOffset.x = 0;
+      shakeOffset.y = 0;
+    }
+  }
+
+  // ---- 主绘制 ----
+  function draw(timestamp) {
+    ctx.save();
+    ctx.translate(shakeOffset.x, shakeOffset.y);
+
+    drawBackground();
+    drawFoods();
+    drawObstacles();
+    drawSnake();
+
+    ctx.restore();
+  }
+
+  // ---- 游戏循环 ----
+  function gameLoop(timestamp) {
+    if (!gameRunning) return;
+
+    updateShake(timestamp);
+    update(timestamp);
+    draw(timestamp);
+
+    animFrameId = requestAnimationFrame(gameLoop);
+  }
+
+  // ---- 游戏结束 ----
+  function gameOver() {
+    gameRunning = false;
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+
+    // 震动
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+    // 显示结束画面
+    const reason = REJECT_MESSAGES[rand(0, REJECT_MESSAGES.length - 1)];
+    rejectReasonEl.textContent = reason;
+    finalScoreEl.textContent = `¥${score}`;
+    finalInvoicesEl.textContent = `共处理 ${invoiceCount} 张发票`;
+    finalSpeedEl.textContent = `最终速度 ×${speedMultiplier.toFixed(1)}`;
+    gameOverScreen.classList.remove('hidden');
+  }
+
+  // ---- 开始游戏 ----
+  function startGame() {
+    initGame();
+    startScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    gameRunning = true;
+    lastMoveTime = 0;
+    animFrameId = requestAnimationFrame(gameLoop);
+  }
+
+  // ---- 输入控制 ----
+  function setDirection(dir) {
+    switch (dir) {
+      case 'up':
+        if (direction.y !== 1) nextDirection = { x: 0, y: -1 };
+        break;
+      case 'down':
+        if (direction.y !== -1) nextDirection = { x: 0, y: 1 };
+        break;
+      case 'left':
+        if (direction.x !== 1) nextDirection = { x: -1, y: 0 };
+        break;
+      case 'right':
+        if (direction.x !== -1) nextDirection = { x: 1, y: 0 };
+        break;
+    }
+  }
+
+  // 键盘事件
+  document.addEventListener('keydown', (e) => {
+    const keyMap = {
+      ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+      w: 'up', s: 'down', a: 'left', d: 'right',
+      W: 'up', S: 'down', A: 'left', D: 'right',
+    };
+    if (keyMap[e.key]) {
+      e.preventDefault();
+      if (gameRunning) setDirection(keyMap[e.key]);
+    }
+  });
+
+  // 移动端方向按钮
+  document.querySelectorAll('.d-btn').forEach(btn => {
+    btn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (gameRunning) setDirection(btn.dataset.dir);
+    });
+    btn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      if (gameRunning) setDirection(btn.dataset.dir);
+    });
+  });
+
+  // 触摸滑动
+  let touchStartX = 0, touchStartY = 0;
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    if (!gameRunning) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (Math.max(absDx, absDy) < 20) return; // 太短忽略
+    if (absDx > absDy) {
+      setDirection(dx > 0 ? 'right' : 'left');
+    } else {
+      setDirection(dy > 0 ? 'down' : 'up');
+    }
+  }, { passive: false });
+
+  // 按钮事件
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('restartBtn').addEventListener('click', startGame);
+
+  // 窗口大小变化
+  window.addEventListener('resize', () => {
+    if (!gameRunning) {
+      resizeCanvas();
+      drawBackground();
+    }
+  });
+
+  // ---- 初始渲染 ----
+  resizeCanvas();
+  drawBackground();
+
+})();
+</script>
+</body>
+</html>

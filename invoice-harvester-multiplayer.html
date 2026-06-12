@@ -1,0 +1,3347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>财务人的噩梦：发票收割机 多人版</title>
+<style>
+  /* ============================================================
+     全局样式 - 赛博霓虹主题
+  ============================================================ */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 50%, #0d1520 100%);
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* 简约太空背景 */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 80%, rgba(60,40,120,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(40,60,100,0.12) 0%, transparent 50%);
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 稀疏星星 - 更明显 */
+  .stars {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: 
+      radial-gradient(3px 3px at 15% 25%, rgba(255,255,255,0.9), transparent),
+      radial-gradient(2px 2px at 35% 65%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(3px 3px at 55% 15%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(2px 2px at 75% 45%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(3px 3px at 95% 85%, rgba(255,255,255,0.9), transparent),
+      radial-gradient(2px 2px at 20% 80%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(3px 3px at 65% 75%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(2px 2px at 90% 35%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(2px 2px at 5% 55%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(3px 3px at 45% 90%, rgba(255,255,255,0.8), transparent);
+    background-repeat: repeat;
+    background-size: 800px 500px;
+  }
+
+  #gameWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* ============================================================
+     HUD 面板
+  ============================================================ */
+  #hud {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, rgba(15,10,50,0.92), rgba(30,15,60,0.88));
+    border-radius: 12px 12px 0 0;
+    color: #e0e6ed;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 0 20px rgba(120,80,255,0.3), 0 0 40px rgba(0,180,255,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+    border: 1px solid rgba(120,80,255,0.3);
+    border-bottom: none;
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    gap: 6px;
+  }
+
+  #hud .hud-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #hud .hud-group-left { flex: 1; min-width: 0; flex-wrap: wrap; gap: 4px 10px; }
+  #hud .hud-group-center { flex-shrink: 0; gap: 4px 10px; flex-wrap: wrap; }
+  #hud .hud-group-right { flex-shrink: 0; gap: 4px 8px; }
+
+  #hud .hud-item { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  #hud .hud-value {
+    color: #00e5ff;
+    font-size: 14px;
+    min-width: auto;
+    text-align: right;
+    text-shadow: 0 0 8px rgba(0,229,255,0.8), 0 0 20px rgba(0,229,255,0.4), 0 0 40px rgba(0,229,255,0.2);
+    animation: neonGlow 2s ease-in-out infinite alternate;
+  }
+  @keyframes neonGlow {
+    0% { text-shadow: 0 0 8px rgba(0,229,255,0.6), 0 0 20px rgba(0,229,255,0.3); }
+    100% { text-shadow: 0 0 12px rgba(0,229,255,1), 0 0 30px rgba(0,229,255,0.5), 0 0 50px rgba(0,229,255,0.2); }
+  }
+  #hud .hud-value.warn { color: #ff4081; text-shadow: 0 0 10px rgba(255,64,129,0.8), 0 0 25px rgba(255,64,129,0.4); }
+  #hud .hud-value.gold { color: #ffea00; text-shadow: 0 0 10px rgba(255,234,0,0.8), 0 0 25px rgba(255,234,0,0.4); }
+
+  /* 在线玩家指示器 */
+  .online-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(0,229,255,0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(0,229,255,0.3);
+  }
+  .online-indicator .dot {
+    width: 8px; height: 8px;
+    background: #00e5ff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #00e5ff, 0 0 16px rgba(0,229,255,0.5);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ============================================================
+     主游戏区域 (画布 + 侧边栏)
+  ============================================================ */
+  #mainArea {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  canvas {
+    display: block;
+    border: 2px solid rgba(120,80,255,0.4);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 0 10px rgba(0,150,255,0.6), 0 0 30px rgba(0,150,255,0.3), 0 0 60px rgba(120,80,255,0.15), inset 0 0 60px rgba(0,0,0,0.3);
+    background: rgba(8,5,30,0.7);
+  }
+
+  /* ============================================================
+     左侧信息面板
+  ============================================================ */
+  #leftPanel {
+    width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .panel-section {
+    background: linear-gradient(135deg, rgba(15,10,50,0.9), rgba(30,15,60,0.85));
+    border-radius: 12px;
+    padding: 10px;
+    border: 1px solid rgba(120,80,255,0.3);
+    box-shadow: 0 0 15px rgba(120,80,255,0.15);
+    backdrop-filter: blur(10px);
+  }
+  .panel-title {
+    font-size: 13px;
+    color: #e0e6ed;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(120,80,255,0.2);
+  }
+  
+  /* 段位显示 */
+  .rank-display { text-align: center; }
+  .rank-icon { font-size: 36px; margin-bottom: 4px; }
+  .rank-name { font-size: 15px; font-weight: bold; color: #fde047; text-shadow: 0 0 8px rgba(253,224,71,0.5); }
+  .rank-title { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .rank-progress {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .rank-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7c4dff, #e040fb);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(124,77,255,0.5);
+  }
+  .rank-next { font-size: 10px; color: #64748b; margin-top: 4px; }
+  
+  /* 食物图鉴 */
+  .food-list { display: flex; flex-direction: column; gap: 8px; }
+  .food-section-title { font-size: 11px; color: #60a5fa; font-weight: bold; margin-bottom: 4px; padding-left: 2px; }
+  .food-col { display: flex; flex-direction: column; gap: 4px; }
+  .food-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+  .food-table td { padding: 3px 4px; vertical-align: middle; }
+  .food-table td:first-child { text-align: center; width: 16px; font-size: 12px; }
+  .food-table td:nth-child(2) { color: #e0e6ed; }
+  .food-table td:last-child { text-align: right; color: #4ade80; font-weight: bold; font-size: 10px; }
+  .food-table tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+  .food-table tr:hover { background: rgba(255,255,255,0.08); }
+
+  /* ============================================================
+     侧边栏 - 实时排行榜
+  ============================================================ */
+  #sidebar {
+    width: 180px;
+    max-height: 560px;
+    overflow-y: auto;
+    background: linear-gradient(135deg, rgba(15,10,50,0.9), rgba(30,15,60,0.85));
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid rgba(120,80,255,0.3);
+    box-shadow: 0 0 20px rgba(120,80,255,0.2), 0 0 40px rgba(0,150,255,0.1);
+    backdrop-filter: blur(10px);
+  }
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-track { background: transparent; }
+  #sidebar::-webkit-scrollbar-thumb { background: rgba(100,150,255,0.3); border-radius: 2px; }
+
+  #sidebar h3 {
+    font-size: 13px;
+    color: #60a5fa;
+    margin-bottom: 10px;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(96,165,250,0.3);
+  }
+
+  .live-leaderboard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .live-player {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: 12px;
+    transition: all 0.3s;
+  }
+
+  .live-player:hover { background: rgba(255,255,255,0.1); }
+  .live-player.me { border-color: rgba(96,165,250,0.5); background: rgba(96,165,250,0.1); }
+  .live-player.top1 { border-color: rgba(251,191,36,0.4); }
+  .live-player.top2 { border-color: rgba(148,163,184,0.4); }
+  .live-player.top3 { border-color: rgba(180,83,9,0.4); }
+
+  .live-rank {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    margin-right: 8px;
+  }
+  .live-rank.gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1a1a; }
+  .live-rank.silver { background: linear-gradient(135deg, #94a3b8, #64748b); color: #1a1a1a; }
+  .live-rank.bronze { background: linear-gradient(135deg, #b45309, #92400e); color: #fff; }
+  .live-rank.normal { background: rgba(255,255,255,0.1); color: #94a3b8; }
+
+  .live-info { flex: 1; overflow: hidden; }
+  .live-name {
+    color: #e0e6ed;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .live-name.you { color: #60a5fa; }
+  .live-score { color: #4ade80; font-size: 11px; }
+  .live-status {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-left: 4px;
+  }
+  .live-status.playing { background: #4ade80; box-shadow: 0 0 4px #4ade80; }
+  .live-status.gameover { background: #f87171; }
+
+  /* ============================================================
+     屏幕覆盖层
+  ============================================================ */
+  #startScreen, #gameOverScreen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(8,5,30,0.98), rgba(20,10,50,0.96));
+    z-index: 20;
+    color: #e0e6ed;
+    text-align: center;
+    padding: 20px;
+    transition: opacity 0.3s;
+    backdrop-filter: blur(20px);
+    overflow-y: auto;
+  }
+
+  #startScreen.hidden, #gameOverScreen.hidden { opacity: 0; pointer-events: none; }
+
+  .screen-title {
+    font-size: 28px;
+    font-weight: bold;
+    background: linear-gradient(135deg, #00e5ff, #e040fb, #7c4dff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 8px rgba(0,229,255,0.5));
+  }
+  .screen-subtitle { font-size: 14px; color: #94a3b8; margin-bottom: 20px; }
+  .screen-emoji { font-size: 60px; margin-bottom: 12px; filter: drop-shadow(0 0 20px rgba(100,150,255,0.5)); animation: float 2s ease-in-out infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  /* ============================================================
+     按钮样式
+  ============================================================ */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 32px;
+    min-height: 48px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 24px;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(135deg, #7c4dff, #e040fb);
+    box-shadow: 0 0 15px rgba(124,77,255,0.5), 0 0 30px rgba(224,64,251,0.3), 0 4px 15px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+    margin-top: 12px;
+    line-height: 1;
+  }
+  .btn:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(124,77,255,0.7), 0 0 50px rgba(224,64,251,0.4); }
+  .btn:active { transform: scale(0.97); }
+
+  /* ============================================================
+     输入框样式
+  ============================================================ */
+  .name-input-container { margin: 16px 0; }
+  .name-input-label { font-size: 13px; color: #94a3b8; margin-bottom: 10px; }
+  .name-input {
+    width: 180px;
+    padding: 10px 14px;
+    font-size: 16px;
+    text-align: center;
+    background: rgba(0,0,0,0.4);
+    border: 2px solid rgba(120,80,255,0.4);
+    border-radius: 8px;
+    color: #fff;
+    outline: none;
+    transition: all 0.3s;
+  }
+  .name-input:focus {
+    border-color: #00e5ff;
+    box-shadow: 0 0 15px rgba(0,229,255,0.4), 0 0 30px rgba(0,229,255,0.2);
+  }
+
+  /* ============================================================
+     连接状态提示
+  ============================================================ */
+  .connection-status {
+    position: fixed;
+    top: 10px; right: 10px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 100;
+    transition: all 0.3s;
+  }
+  .connection-status.connected {
+    background: rgba(74,222,128,0.2);
+    color: #4ade80;
+    border: 1px solid rgba(74,222,128,0.4);
+  }
+  .connection-status.disconnected {
+    background: rgba(248,113,113,0.2);
+    color: #f87171;
+    border: 1px solid rgba(248,113,113,0.4);
+  }
+  .connection-status.connecting {
+    background: rgba(251,191,36,0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(251,191,36,0.4);
+  }
+
+  /* ============================================================
+     移动端控制
+  ============================================================ */
+  #mobileControls {
+    display: none;
+    margin-top: 15px;
+    position: relative;
+    width: 180px; height: 180px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .d-btn {
+    position: absolute;
+    width: 56px; height: 56px;
+    border: none;
+    border-radius: 14px;
+    background: rgba(30,45,80,0.85);
+    color: #e0e6ed;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(100,150,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+    border: 1px solid rgba(100,150,255,0.3);
+    transition: background 0.1s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .d-btn:active, .d-btn.pressed {
+    background: rgba(80,120,255,0.7);
+    transform: scale(0.92);
+    box-shadow: 0 0 25px rgba(100,150,255,0.5);
+  }
+  .d-btn.up { top: 0; left: 50%; transform: translateX(-50%); }
+  .d-btn.down { bottom: 0; left: 50%; transform: translateX(-50%); }
+  .d-btn.left { top: 50%; left: 0; transform: translateY(-50%); }
+  .d-btn.right { top: 50%; right: 0; transform: translateY(-50%); }
+
+  @media (pointer: coarse) {
+    #mobileControls { display: block; }
+    body { overflow: hidden; overscroll-behavior: none; }
+  }
+  @media (max-width: 900px) {
+    #mainArea { flex-direction: column; align-items: center; gap: 8px; }
+    #leftPanel { display: none; }
+    #sidebar { width: 100%; max-width: 100%; }
+    .live-leaderboard { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .live-player { flex: 0 0 auto; min-width: 100px; margin: 2px; }
+    /* 开始界面适配 */
+    #startScreen { padding: 15px !important; }
+    .start-content { flex-direction: column !important; gap: 15px !important; }
+    .start-main { width: 100% !important; }
+    #localLeaderboard { width: 100% !important; max-height: 180px; }
+    /* 游戏结束界面适配 */
+    #gameOverScreen { max-width: 95vw !important; padding: 15px !important; }
+  }
+  @media (max-width: 640px) {
+    /* HUD更紧凑 */
+    #hud { font-size: 10px; padding: 5px 6px; gap: 4px; flex-wrap: wrap; justify-content: center; }
+    #hud .hud-group { gap: 4px 6px; }
+    #hud .hud-item { gap: 2px; }
+    #hud .hud-value { font-size: 11px; }
+    /* 隐藏部分HUD项 */
+    #hud .hud-group-center { display: none; } /* 隐藏道具状态 */
+    .screen-title { font-size: 20px; }
+    .screen-subtitle { font-size: 12px; }
+    /* 方向按钮 */
+    #mobileControls { width: 160px; height: 160px; margin-top: 8px; }
+    .d-btn { width: 50px; height: 50px; font-size: 20px; border-radius: 12px; }
+    /* 排行榜更紧凑 */
+    .live-player { min-width: 90px; font-size: 10px; padding: 4px; }
+    .live-rank { width: 18px; height: 18px; font-size: 10px; }
+    .live-name { font-size: 10px; }
+    .live-score { font-size: 9px; }
+    /* 开始界面 */
+    .screen-emoji { font-size: 40px; }
+    .name-input-container { padding: 8px; }
+    .name-input { font-size: 14px; padding: 8px; }
+    .btn { padding: 10px 20px; font-size: 14px; }
+    /* Canvas边框 */
+    canvas { border-width: 1px; }
+  }
+  @media (max-width: 400px) {
+    /* 超小屏幕 */
+    #hud { font-size: 9px; padding: 4px; gap: 3px; }
+    #hud .hud-value { font-size: 10px; }
+    #mobileControls { width: 140px; height: 140px; }
+    .d-btn { width: 44px; height: 44px; font-size: 18px; }
+    .screen-title { font-size: 18px; }
+    .btn { padding: 8px 16px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<!-- 太空星星背景 -->
+<div class="stars"></div>
+
+<!-- 连接状态 -->
+<div id="connectionStatus" class="connection-status connecting">正在连接服务器...</div>
+
+<div id="gameWrapper">
+  <!-- HUD -->
+  <div id="hud">
+    <!-- 左组：经济信息 -->
+    <div class="hud-group hud-group-left">
+      <div class="hud-item">
+        <span>💰</span><span class="hud-value" id="scoreDisplay">¥0</span>
+      </div>
+      <div class="hud-item">
+        <span>📄</span><span id="invoiceDisplay">0张</span>
+      </div>
+      <div class="hud-item">
+        <span>⚡</span><span class="hud-value" id="speedDisplay">×1.0</span>
+      </div>
+      <div class="hud-item" id="comboDisplay" style="display:none;">
+        <span>🔥</span><span class="hud-value gold" id="comboValue">×1</span>
+      </div>
+    </div>
+    <!-- 中组：道具状态 -->
+    <div class="hud-group hud-group-center">
+      <div class="hud-item" id="shieldDisplay" style="display:none;">
+        <span>🛡️</span>
+      </div>
+      <div class="hud-item" id="magnetDisplay" style="display:none;">
+        <span>🧲<span id="magnetTime">0</span>s</span>
+      </div>
+    </div>
+    <!-- 右组：AI + 在线 + 控制 -->
+    <div class="hud-group hud-group-right">
+      <div class="hud-item" id="aiSpawnTimerDisplay">
+        <span>🤖</span><span class="hud-value" id="aiTimerValue" style="color:#ff6b6b;font-size:12px;">60s</span>
+      </div>
+      <div class="online-indicator">
+        <div class="dot"></div>
+        <span id="onlineCount" style="font-size:11px;">1人</span>
+      </div>
+      <button id="muteBtn" onclick="toggleMute()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:14px;padding:0;">🔊</button>
+      <button id="pauseBtn" onclick="togglePause()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:14px;padding:0;" title="暂停 (Esc/P)">⏸</button>
+    </div>
+  </div>
+
+  <!-- 主游戏区域 -->
+  <div id="mainArea">
+    <!-- 左侧信息面板 -->
+    <div id="leftPanel">
+      <div class="panel-section">
+        <h3 class="panel-title">📊 段位信息</h3>
+        <div id="rankDisplay" class="rank-display">
+          <div class="rank-icon" id="rankIcon">😊</div>
+          <div class="rank-name" id="rankName">职场小白</div>
+          <div class="rank-title" id="rankTitle">刚入职的新人</div>
+          <div class="rank-progress">
+            <div class="rank-bar" id="rankBar" style="width:0%"></div>
+          </div>
+          <div class="rank-next" id="rankNext">下一级：初等会计 (100分)</div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <h3 class="panel-title">🧾 发票图鉴</h3>
+        <div style="margin-bottom:6px;">
+          <div class="food-section-title">📊 普通发票</div>
+          <table class="food-table">
+            <tr><td>🧾</td><td>普票</td><td>+10</td></tr>
+            <tr><td>💻</td><td>电子</td><td>+20</td></tr>
+            <tr><td>📋</td><td>专票</td><td>+50</td></tr>
+            <tr><td>🏛️</td><td>增值税</td><td>+80</td></tr>
+            <tr><td>🔴</td><td>红字</td><td>+100</td></tr>
+            <tr><td>💎</td><td>钻石</td><td>+200</td></tr>
+            <tr><td>👑</td><td>黄金</td><td>+500</td></tr>
+          </table>
+        </div>
+        <div>
+          <div class="food-section-title">⚡ 功能发票</div>
+          <table class="food-table">
+            <tr><td>⏰</td><td>定时</td><td style="color:#06b6d4;">降速10秒</td></tr>
+            <tr><td>🧲</td><td>磁铁</td><td style="color:#ec4899;">吸引发票</td></tr>
+            <tr><td>🛡️</td><td>护盾</td><td style="color:#0ea5e9;">抵挡1次</td></tr>
+            <tr><td>💣</td><td>炸弹</td><td style="color:#dc2626;">消灭AI</td></tr>
+            <tr><td>💊</td><td>治疗</td><td style="color:#16a34a;">缩短50%</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- 右侧排行榜 -->
+    <div id="sidebar">
+      <div style="margin-bottom: 10px; text-align: center;">
+        <span style="font-size: 13px; color: #60a5fa; font-weight: bold;">🏆 排行榜</span>
+      </div>
+      <div id="historyInSidebar" style="display:flex; flex-direction:column; gap:6px;">
+        <div style="text-align: center; color: #94a3b8; font-size: 11px;">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 开始画面 -->
+  <div id="startScreen">
+    <div class="start-content" style="display: flex; gap: 30px; align-items: flex-start; max-width: 700px; width: 100%;">
+      <!-- 左侧：游戏入口 -->
+      <div class="start-main" style="flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0;">
+        <div class="screen-emoji">🧾🐍</div>
+        <div class="screen-title">财务人的噩梦</div>
+        <div class="screen-subtitle">发票收割机 多人版</div>
+        <div class="name-input-container">
+          <div class="name-input-label">请输入您的名字（必填）：</div>
+          <input type="text" class="name-input" id="playerNameInput" maxlength="8" placeholder="请输入2-8个字符" value="">
+        </div>
+        <button class="btn" id="startBtn">开始游戏 🎮</button>
+      </div>
+      <!-- 右侧：本地排行榜 -->
+      <div id="localLeaderboard" style="width: 180px; flex-shrink: 0; background: rgba(20,30,60,0.8); border-radius: 12px; padding: 12px; border: 1px solid rgba(100,150,255,0.3);">
+        <h3 style="font-size: 13px; color: #60a5fa; margin-bottom: 10px; text-align: center;">🏆 历史高分榜</h3>
+        <div id="localLeaderboardList" style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="text-align: center; color: #94a3b8; font-size: 11px;">暂无记录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 游戏结束画面 -->
+  <div id="gameOverScreen" class="hidden" style="max-width: 500px;">
+    <div class="screen-emoji">❌</div>
+    <div class="screen-subtitle" id="rejectReason">本次报销被驳回！</div>
+    <div class="screen-title" id="finalScore" style="font-size: 36px; margin: 10px 0;">¥0</div>
+    <div class="screen-subtitle" id="finalDetail">共处理 0 张发票</div>
+    <div id="nameInputArea" class="name-input-container">
+      <div class="name-input-label">确认或修改您的姓名（记录到历史高分榜）：</div>
+      <input type="text" class="name-input" id="gameOverNameInput" maxlength="8" placeholder="2-8个字符">
+    </div>
+    <div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; flex-wrap: wrap;">
+      <button class="btn" id="confirmNameBtn" style="padding: 8px 24px; font-size: 14px;">确认录入 ✅</button>
+      <button class="btn" id="restartBtn" style="padding: 8px 24px; font-size: 14px;">再次挑战 🔄</button>
+    </div>
+  </div>
+</div>
+
+<!-- 移动端控制 -->
+<div id="mobileControls">
+  <button class="d-btn up" data-dir="up">▲</button>
+  <button class="d-btn down" data-dir="down">▼</button>
+  <button class="d-btn left" data-dir="left">◀</button>
+  <button class="d-btn right" data-dir="right">▶</button>
+  <button class="d-btn" id="mobilePauseBtn" onclick="togglePause()" style="position:absolute;top:-36px;right:0;width:auto;padding:4px 12px;font-size:12px;border-radius:8px;">⏸ 暂停</button>
+</div>
+
+<script>
+// ============================================================
+// 多人游戏客户端
+// ============================================================
+
+(() => {
+  'use strict';
+
+  // 配置
+  const GRID = 22;
+  const BASE_SPEED = 140;
+  const SPEED_INCREMENT = 0.03;  // 加速幅度降低（原0.05）
+  const SCORE_SPEED_STEP = 200;  // 积分门槛提高1倍（原100）
+
+  const INVOICE_TYPES = [
+    { name: '普票', score: 10, bg: '#ffffff', border: '#94a3b8', glow: 'rgba(148,163,184,0.6)', textColor: '#e2e8f0', weight: 35, icon: '🧾' },
+    { name: '电子', score: 20, bg: '#dcfce7', border: '#22c55e', glow: 'rgba(34,197,94,0.6)', textColor: '#4ade80', weight: 25, icon: '💻' },
+    { name: '专票', score: 50, bg: '#dbeafe', border: '#3b82f6', glow: 'rgba(59,130,246,0.6)', textColor: '#fbbf24', weight: 15, icon: '📋' },
+    { name: '增值税', score: 80, bg: '#fef3c7', border: '#f59e0b', glow: 'rgba(245,158,11,0.7)', textColor: '#f59e0b', weight: 10, icon: '🏛️' },
+    { name: '红字', score: 100, bg: '#fee2e2', border: '#ef4444', glow: 'rgba(239,68,68,0.7)', textColor: '#ef4444', weight: 5, icon: '🔴' },
+    { name: '钻石', score: 200, bg: '#ede9fe', border: '#a855f7', glow: 'rgba(168,85,247,0.8)', textColor: '#c084fc', weight: 2, icon: '💎' },
+    { name: '黄金', score: 500, bg: '#fffbeb', border: '#eab308', glow: 'rgba(234,179,8,0.9)', textColor: '#fde047', weight: 1, icon: '👑' },
+    { name: '定时', score: 0, bg: '#fef9c3', border: '#06b6d4', glow: 'rgba(6,182,212,0.8)', textColor: '#06b6d4', weight: 3, icon: '⏰', isTimer: true },
+    { name: '磁铁', score: 0, bg: '#fce7f3', border: '#ec4899', glow: 'rgba(236,72,153,0.8)', textColor: '#ec4899', weight: 2, icon: '🧲', isMagnet: true },
+    { name: '护盾', score: 0, bg: '#e0f2fe', border: '#0ea5e9', glow: 'rgba(14,165,233,0.8)', textColor: '#0ea5e9', weight: 2, icon: '🛡️', isShield: true },
+    { name: '炸弹', score: 0, bg: '#fef2f2', border: '#dc2626', glow: 'rgba(220,38,38,0.9)', textColor: '#dc2626', weight: 1, icon: '💣', isBomb: true },
+    { name: '治疗', score: 0, bg: '#f0fdf4', border: '#16a34a', glow: 'rgba(22,163,74,0.8)', textColor: '#16a34a', weight: 2, icon: '💊', isHeal: true },
+  ];
+
+  const DANMAKU_MESSAGES = {
+    normal: ['恭喜！成功抵扣税额！', '这张发票是真的！', '老板签字通过！', '财务审核无误 ✓'],
+    electronic: ['电子发票已归档！', '云端存储成功 ☁️', '无纸化办公典范！'],
+    special: ['🎉 大额专票到手！', '税额抵扣最大化！', '老板看了直点头！', '年终奖+1！'],
+    vat: ['🏛️ 增值税发票！大额抵扣！', '税务筹划成功！', '财务总监点赞！'],
+    red: ['🔴 红字发票！冲红成功！', '税务调整完毕！', '高风险高回报！'],
+    diamond: ['💎 钻石发票！百年一遇！', '财务部全体起立！', '直接晋升CFO！'],
+    gold: ['👑 黄金发票！传说级！', '老板直接给股份！', '全公司为你欢呼！'],
+    timer: ['⏰ 审计员减速！', '时间就是金钱！', '趁机收割！'],
+    magnet: ['🧲 磁铁启动！发票自动飞来！', '万有引力！', '发票磁暴！'],
+    shield: ['🛡️ 护盾已激活！', '铜墙铁壁！', '审计员撞上来试试！'],
+    bomb: ['💣 轰！审计员全军覆没！', '核弹级报销！', '清场大师！'],
+    heal: ['💊 治疗成功！瘦身成功！', '轻装上阵！', '减肥成功！'],
+  };
+
+  // 段位升级系统
+  const RANKS = [
+    { name: '职场小白', minScore: 0,     headIcon: '😊', bodyColor: '#94a3b8', bodyGlow: 'rgba(148,163,184,0.4)', bodyIcons: ['📄'], title: '刚入职的新人' },
+    { name: '初等会计', minScore: 200,   headIcon: '🧑‍💼', bodyColor: '#4ade80', bodyGlow: 'rgba(74,222,128,0.5)', bodyIcons: ['🧾','💰'], title: '基础会计资格' },
+    { name: '中级会计', minScore: 600,   headIcon: '📊', bodyColor: '#60a5fa', bodyGlow: 'rgba(96,165,250,0.5)', bodyIcons: ['🧾','💰','📊'], title: '中级职称到手' },
+    { name: '高级会计', minScore: 1200,  headIcon: '🎓', bodyColor: '#a78bfa', bodyGlow: 'rgba(167,139,250,0.5)', bodyIcons: ['🧾','💰','📊','🎓'], title: '高级职称持有者' },
+    { name: '注册会计师', minScore: 2000, headIcon: '🏅', bodyColor: '#fbbf24', bodyGlow: 'rgba(251,191,36,0.6)', bodyIcons: ['💰','📊','🎓','🏅'], title: 'CPA持证精英' },
+    { name: '财务主管', minScore: 4000,  headIcon: '💼', bodyColor: '#fb923c', bodyGlow: 'rgba(251,146,60,0.6)', bodyIcons: ['💰','📊','💼','🏅'], title: '管理层级别' },
+    { name: '财务总监', minScore: 7000,  headIcon: '🏛️', bodyColor: '#f87171', bodyGlow: 'rgba(248,113,113,0.6)', bodyIcons: ['💰','📊','🏛️','💼'], title: 'CFO候选人' },
+    { name: 'CFO',      minScore: 10000, headIcon: '👑', bodyColor: '#fde047', bodyGlow: 'rgba(253,224,71,0.7)', bodyIcons: ['💰','📊','🏛️','👑'], title: '首席财务官' },
+    { name: '财神',     minScore: 16000, headIcon: '🐉', bodyColor: '#c084fc', bodyGlow: 'rgba(192,132,252,0.8)', bodyIcons: ['💰','💎','🏛️','🐉'], title: '传说中的财务之神' },
+  ];
+  
+  let currentRank = RANKS[0];
+  let rankUpMessage = null;
+  
+  function getCurrentRank(score) {
+    let rank = RANKS[0];
+    for (const r of RANKS) {
+      if (score >= r.minScore) rank = r;
+    }
+    return rank;
+  }
+  
+  function checkRankUp() {
+    const newRank = getCurrentRank(score);
+    if (newRank.name !== currentRank.name) {
+      currentRank = newRank;
+      // 段位提升播报
+      showBroadcast(`🎉 段位提升！${newRank.headIcon} ${newRank.name}`, '#fde047', 3000);
+      playEatSound(5);  // 播放升级音效
+      rankUpMessage = { text: `${newRank.headIcon} ${newRank.name}`, subText: newRank.title, startTime: performance.now(), duration: 3000 };
+      return true;
+    }
+    return false;
+  }
+
+  const REJECT_MESSAGES = [
+    '财务部发现异常发票，报销申请已被驳回！',
+    '审计部门介入调查，所有发票需重新审核！',
+    '税务局发出预警，涉嫌虚开发票！',
+    '被审计员逮住了！',
+    '审计员突然出现，来不及躲避！',
+  ];
+
+  // DOM
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const connectionStatus = document.getElementById('connectionStatus');
+  const onlineCountEl = document.getElementById('onlineCount');
+  // 音效系统
+  // 游戏状态
+  let cols, rows;
+  let snake = [];
+  let direction = { x: 1, y: 0 };
+  let nextDirection = { x: 1, y: 0 };
+  let foods = [];
+  let score = 0;
+  let invoiceCount = 0;
+  let speedMultiplier = 1.0;
+  let gameRunning = false;
+  let lastMoveTime = 0;
+  let animFrameId = null;
+  let shakeOffset = { x: 0, y: 0 };
+  let shakeDuration = 0;
+  let danmakuList = [];
+  let floatingElements = [];
+  let particles = [];
+
+  // 审计员状态 - 支持多条审计员
+  let aiSnakes = [];  // 审计员数组
+  let aiSpawnTimer = 0;  // 审计员生成计时器
+  const AI_SPAWN_INTERVAL = 20000;  // 每20秒生成1条（毫秒）
+  const MAX_AI_SNAKES = 8;  // 最多8条审计员
+  let aiFrozenUntil = 0;  // 审计员冻结结束时间（旧版定时发票效果，已废弃）
+  let aiSlowUntil = 0;  // 审计员减速结束时间
+  let speedDebuff = 0;  // 速度惩罚（定时发票永久叠加）
+  let playerSlowUntil = 0;  // 玩家临时减速结束时间
+  let playerShield = false;  // 玩家护盾状态
+  let magnetUntil = 0;  // 磁铁效果结束时间
+
+  // 连击系统
+  let comboCount = 0;
+  let lastEatTime = 0;
+  const COMBO_WINDOW = 1500;  // 1.5秒内连续吃发票算连击
+  let comboMessage = null;
+
+  // 发票生成系统
+  let foodSpawnTimer = 0;
+  const FOOD_SPAWN_INTERVAL = 8000;  // 每8秒生成新发票
+
+  // 多人游戏状态
+  let playerId = null;
+  let playerName = '';
+  let allPlayers = [];
+  let eventSource = null;
+
+  // 服务器端历史高分榜（默认数据，从all_leaderboard_merged.json加载）
+  let historyLeaderboard = [
+    {"name": "宝可梦", "score": 3160, "invoices": 56},
+    {"name": "一条龙", "score": 2530, "invoices": 35},
+    {"name": "kOBe", "score": 2240, "invoices": 31},
+    {"name": "一条龙", "score": 2115, "invoices": 42},
+    {"name": "一条龙", "score": 2100, "invoices": 48},
+    {"name": "勇哥", "score": 1805, "invoices": 36},
+    {"name": "不再张望", "score": 1465, "invoices": 26},
+    {"name": "张秋雪", "score": 1350, "invoices": 12},
+    {"name": "无敌太寂寞", "score": 1235, "invoices": 23},
+    {"name": "扫地僧", "score": 1230, "invoices": 22}
+  ];
+
+  // 音效系统
+  let audioContext = null;
+  let bgMusicGain = null;
+  let sfxGain = null;
+  let isMuted = false;
+  let bgMusicPlaying = false;
+
+  // 去重并排序历史记录（同名只保留最高分，只保留前10）
+  function deduplicateLeaderboard(records) {
+    const bestScores = {};
+    records.forEach(record => {
+      const name = record.name;
+      if (!bestScores[name] || record.score > bestScores[name].score) {
+        bestScores[name] = record;
+      }
+    });
+    return Object.values(bestScores).sort((a, b) => b.score - a.score).slice(0, 10);
+  }
+
+  // 从服务器加载历史高分榜
+  async function loadHistoryLeaderboard() {
+    // 先渲染默认数据（确保页面不会空白）
+    renderLocalLeaderboard();
+    
+    try {
+      const res = await fetch(`${getServerUrl()}/api/history`, { timeout: 5000 });
+      const data = await res.json();
+      if (data.players && data.players.length > 0) {
+        // 服务器返回数据后去重
+        historyLeaderboard = deduplicateLeaderboard(data.players);
+        localStorage.setItem('historyLeaderboard_backup', JSON.stringify(historyLeaderboard));
+        renderLocalLeaderboard();
+        renderHistoryInSidebar();
+      }
+    } catch (e) {
+      console.error('加载历史高分榜失败:', e);
+      // 尝试从本地存储加载备份
+      const backup = localStorage.getItem('historyLeaderboard_backup');
+      if (backup) {
+        try {
+          historyLeaderboard = JSON.parse(backup);
+          renderLocalLeaderboard();
+        } catch (err) {
+          console.error('解析本地备份失败:', err);
+        }
+      }
+      // 默认数据已显示，无需额外操作
+    }
+  }
+
+  // 添加记录到服务器历史高分榜
+  async function addToHistoryLeaderboard(name, score, invoices) {
+    // 先更新本地数据（立即显示）
+    const newRecord = { 
+      name, 
+      score, 
+      invoices, 
+      date: new Date().toISOString().split('T')[0] + ' ' + new Date().toTimeString().split(' ')[0].substring(0, 5) 
+    };
+    
+    // 检查是否已存在同名玩家的记录
+    const existingIndex = historyLeaderboard.findIndex(r => r.name === name);
+    if (existingIndex >= 0) {
+      // 如果新分数更高，替换旧记录
+      if (score > historyLeaderboard[existingIndex].score) {
+        historyLeaderboard[existingIndex] = newRecord;
+      }
+      // 如果新分数更低或相等，不添加
+    } else {
+      // 添加新记录
+      historyLeaderboard.push(newRecord);
+    }
+    
+    // 按分数排序并只保留前10
+    historyLeaderboard.sort((a, b) => b.score - a.score);
+    historyLeaderboard = historyLeaderboard.slice(0, 10);
+    
+    // 保存到本地存储
+    localStorage.setItem('historyLeaderboard_backup', JSON.stringify(historyLeaderboard));
+    renderLocalLeaderboard();
+    renderHistoryInSidebar();
+    
+    try {
+      const res = await fetch(`${getServerUrl()}/api/history`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score, invoices })
+      });
+      const data = await res.json();
+      if (data.success && data.players && data.players.length > 0) {
+        // 服务器返回数据后去重再更新
+        historyLeaderboard = deduplicateLeaderboard(data.players);
+        localStorage.setItem('historyLeaderboard_backup', JSON.stringify(historyLeaderboard));
+        renderLocalLeaderboard();
+      }
+    } catch (e) {
+      console.error('添加历史记录失败:', e);
+      // 本地数据已更新，无需额外处理
+    }
+  }
+
+  // 渲染历史高分榜 - 同名取最高分
+  function renderLocalLeaderboard() {
+    const container = document.getElementById('localLeaderboardList');
+    
+    if (historyLeaderboard.length === 0) {
+      container.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 12px;">暂无记录</div>';
+      return;
+    }
+    
+    // 合并同名玩家，只保留最高分
+    const bestScores = {};
+    historyLeaderboard.forEach(record => {
+      const name = record.name;
+      if (!bestScores[name] || record.score > bestScores[name].score) {
+        bestScores[name] = record;
+      }
+    });
+    
+    // 转换为数组并排序
+    const uniqueLeaderboard = Object.values(bestScores).sort((a, b) => b.score - a.score).slice(0, 10);
+    
+    let html = '';
+    uniqueLeaderboard.forEach((record, index) => {
+      const rankColors = { 0: '#fbbf24', 1: '#c0c0c0', 2: '#cd7f32' };
+      const color = rankColors[index] || '#64748b';
+      const rankBg = index < 3 ? `rgba(${index===0?'251,191,36':index===1?'192,192,192':'205,127,50'},0.15)` : 'rgba(255,255,255,0.06)';
+      const rankBorder = index < 3 ? `1px solid ${color}33` : '1px solid transparent';
+      const playerRank = getCurrentRank(record.score);
+      
+      html += `
+        <div style="display:flex;align-items:center;padding:7px 10px;background:${rankBg};border-radius:8px;font-size:11px;border:${rankBorder};margin-bottom:4px;">
+          <span style="width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-right:8px;font-size:10px;color:${color};background:rgba(255,255,255,0.08);flex-shrink:0;">${index+1}</span>
+          <div style="flex:1;overflow:hidden;">
+            <div style="color:#e0e6ed;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;">${playerRank.headIcon} ${record.name}</div>
+            <div style="color:#4ade80;font-size:10px;margin-top:1px;">¥${record.score} · ${playerRank.name}</div>
+          </div>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html;
+  }
+
+  // ============================================================
+  // 侧边栏标签切换
+  // ============================================================
+  let currentTab = 'history';  // 只保留历史榜
+
+  function switchTab(tab) {
+    // 只显示历史高分榜
+    renderHistoryInSidebar();
+  }
+
+  function renderHistoryInSidebar() {
+    const container = document.getElementById('historyInSidebar');
+    if (historyLeaderboard.length === 0) {
+      container.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 11px;">暂无记录</div>';
+      return;
+    }
+    // 合并同名取最高分
+    const bestScores = {};
+    historyLeaderboard.forEach(r => {
+      if (!bestScores[r.name] || r.score > bestScores[r.name].score) bestScores[r.name] = r;
+    });
+    const top = Object.values(bestScores).sort((a, b) => b.score - a.score).slice(0, 10);
+    let html = '';
+    top.forEach((record, index) => {
+      const rankColors = { 0: '#fbbf24', 1: '#c0c0c0', 2: '#cd7f32' };
+      const color = rankColors[index] || '#64748b';
+      const rankBg = index < 3 ? `rgba(${index===0?'251,191,36':index===1?'192,192,192':'205,127,50'},0.15)` : 'rgba(255,255,255,0.06)';
+      const rankBorder = index < 3 ? `1px solid ${color}33` : '1px solid transparent';
+      const playerRank = getCurrentRank(record.score);
+      html += `
+        <div style="display:flex;align-items:center;padding:5px 8px;background:${rankBg};border-radius:8px;font-size:11px;border:${rankBorder};margin-bottom:3px;">
+          <span style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-right:6px;font-size:10px;color:${color};background:rgba(255,255,255,0.08);flex-shrink:0;">${index+1}</span>
+          <div style="flex:1;overflow:hidden;">
+            <div style="color:#e0e6ed;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${playerRank.headIcon} ${record.name}</div>
+            <div style="color:#4ade80;font-size:10px;margin-top:1px;">¥${record.score} · ${playerRank.name}</div>
+          </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  // ============================================================
+  // 音效系统
+  // ============================================================
+  
+  function initAudio() {
+    if (audioContext) return;
+    try {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      // 创建主增益节点
+      bgMusicGain = audioContext.createGain();
+      bgMusicGain.gain.value = 0.3;
+      bgMusicGain.connect(audioContext.destination);
+      
+      sfxGain = audioContext.createGain();
+      sfxGain.gain.value = 0.5;
+      sfxGain.connect(audioContext.destination);
+    } catch (e) {
+      console.log('音效系统初始化失败:', e);
+    }
+  }
+
+  // 生成背景音乐（电子风格循环）
+  // 创作电子游戏风格背景音乐
+  const BGM_BPM = 140;
+  const BEAT_DURATION = 60 / BGM_BPM;
+  
+  function playBackgroundMusic() {
+    if (!audioContext || isMuted || bgMusicPlaying) return;
+    bgMusicPlaying = true;
+    
+    // 音乐主题：赛博朋克电子风格
+    // 主旋律（电子游戏感）
+    const melody = [
+      // 第一句：上升
+      392, 440, 494, 523, 587, 659, 698, 784,
+      // 第二句：下降
+      784, 698, 659, 587, 523, 494, 440, 392,
+      // 第三句：跳进
+      392, 523, 587, 659, 784, 880, 988, 1047,
+      // 第四句：平稳
+      988, 880, 784, 698, 659, 587, 523, 392,
+    ];
+    
+    // Bass Line（动感低音）
+    const bassLine = [
+      // 强劲的低音节奏
+      98, 0, 98, 0, 110, 0, 98, 0,
+      87, 0, 87, 0, 98, 0, 87, 0,
+      110, 0, 110, 0, 123, 0, 110, 0,
+      98, 0, 98, 0, 87, 0, 98, 0,
+    ];
+    
+    // 鼓点节奏（电子鼓）
+    const drumPattern = [
+      // 4/4拍节奏型
+      1, 0, 0, 1,  0, 1, 0, 1,   // 底鼓+踩镲
+      1, 0, 1, 0,  1, 0, 1, 0,   // 密集鼓点
+      1, 0, 0, 1,  0, 0, 1, 0,   // 空拍过渡
+      1, 1, 1, 1,  1, 1, 1, 1,   // 高潮鼓点
+    ];
+    
+    const noteLength = BEAT_DURATION / 2;  // 八分音符
+    
+    const playLoop = () => {
+      if (!gameRunning || isMuted) {
+        bgMusicPlaying = false;
+        return;
+      }
+      
+      const now = audioContext.currentTime;
+      
+      // 播放主旋律（电子琴音色）
+      melody.forEach((freq, i) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        const filter = audioContext.createBiquadFilter();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
+        
+        // 电子滤波器
+        filter.type = 'lowpass';
+        filter.frequency.value = 2000 + Math.sin(i * 0.5) * 500;
+        filter.Q.value = 5;
+        
+        // 包络
+        const startTime = now + i * noteLength;
+        gain.gain.setValueAtTime(0.06, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.02, startTime + noteLength * 0.7);
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(bgMusicGain);
+        
+        osc.start(startTime);
+        osc.stop(startTime + noteLength);
+      });
+      
+      // 播放Bass Line（合成贝斯）
+      bassLine.forEach((freq, i) => {
+        if (freq === 0) return;
+        
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
+        
+        const startTime = now + i * noteLength;
+        gain.gain.setValueAtTime(0.12, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + noteLength * 0.8);
+        
+        osc.connect(gain);
+        gain.connect(bgMusicGain);
+        
+        osc.start(startTime);
+        osc.stop(startTime + noteLength);
+      });
+      
+      // 播放鼓点
+      drumPattern.forEach((hit, i) => {
+        if (hit === 0) return;
+        
+        // 底鼓
+        const kick = audioContext.createOscillator();
+        const kickGain = audioContext.createGain();
+        kick.type = 'sine';
+        kick.frequency.setValueAtTime(150, now + i * noteLength);
+        kick.frequency.exponentialRampToValueAtTime(30, now + i * noteLength + 0.1);
+        kickGain.gain.setValueAtTime(0.15, now + i * noteLength);
+        kickGain.gain.exponentialRampToValueAtTime(0.01, now + i * noteLength + 0.15);
+        kick.connect(kickGain);
+        kickGain.connect(bgMusicGain);
+        kick.start(now + i * noteLength);
+        kick.stop(now + i * noteLength + 0.15);
+        
+        // 踩镲
+        if (i % 2 === 0) {
+          const hihat = audioContext.createBufferSource();
+          const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.05, audioContext.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let j = 0; j < data.length; j++) {
+            data[j] = (Math.random() * 2 - 1) * (1 - j / data.length);
+          }
+          hihat.buffer = buffer;
+          
+          const hihatGain = audioContext.createGain();
+          const hihatFilter = audioContext.createBiquadFilter();
+          hihatFilter.type = 'highpass';
+          hihatFilter.frequency.value = 7000;
+          
+          hihatGain.gain.value = 0.03;
+          hihat.connect(hihatFilter);
+          hihatFilter.connect(hihatGain);
+          hihatGain.connect(bgMusicGain);
+          hihat.start(now + i * noteLength);
+        }
+      });
+      
+      // 添加高潮过渡音
+      const buildUp = () => {
+        const buildOsc = audioContext.createOscillator();
+        const buildGain = audioContext.createGain();
+        buildOsc.type = 'sine';
+        buildOsc.frequency.setValueAtTime(200, now + melody.length * noteLength - 0.5);
+        buildOsc.frequency.exponentialRampToValueAtTime(800, now + melody.length * noteLength);
+        buildGain.gain.setValueAtTime(0.08, now + melody.length * noteLength - 0.5);
+        buildGain.gain.exponentialRampToValueAtTime(0.01, now + melody.length * noteLength + 0.3);
+        buildOsc.connect(buildGain);
+        buildGain.connect(bgMusicGain);
+        buildOsc.start(now + melody.length * noteLength - 0.5);
+        buildOsc.stop(now + melody.length * noteLength + 0.3);
+      };
+      buildUp();
+      
+      // 循环播放
+      setTimeout(playLoop, melody.length * noteLength * 1000);
+    };
+    
+    playLoop();
+  }
+
+  // 播放吃食物音效
+  // 王者荣耀风格击杀音效
+  function playEatSound(combo = 0) {
+    if (!audioContext || isMuted) return;
+    
+    const now = audioContext.currentTime;
+    
+    // 根据连击数播放不同击杀音效
+    if (combo >= 5) {
+      // 五杀 - 最华丽的音效
+      playPentaKill(now);
+    } else if (combo >= 4) {
+      // 四杀
+      playQuadraKill(now);
+    } else if (combo >= 3) {
+      // 三杀
+      playTripleKill(now);
+    } else if (combo >= 2) {
+      // 双杀
+      playDoubleKill(now);
+    } else {
+      // 普通击杀
+      playSingleKill(now);
+    }
+  }
+  
+  // 普通击杀音效
+  function playSingleKill(now) {
+    // 清脆的金属音
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(1760, now + 0.1);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    osc.connect(gain);
+    gain.connect(sfxGain);
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
+  
+  // 双杀音效
+  function playDoubleKill(now) {
+    // 两个快速上升的音符
+    [0, 0.08].forEach((delay, i) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = 'square';
+      const baseFreq = 659 + i * 220;
+      osc.frequency.setValueAtTime(baseFreq, now + delay);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + delay + 0.1);
+      gain.gain.setValueAtTime(0.25, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.2);
+      osc.connect(gain);
+      gain.connect(sfxGain);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.2);
+    });
+    
+    // 文字播报
+    showBroadcast('💼 老板赏识！', '#fbbf24', 800, { fontSize: 36, position: 'center' });
+  }
+  
+  // 三杀音效
+  function playTripleKill(now) {
+    // 三个音符 + 和声
+    [0, 0.06, 0.12].forEach((delay, i) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = 'sawtooth';
+      const baseFreq = 523 + i * 220;
+      osc.frequency.setValueAtTime(baseFreq, now + delay);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.3, now + delay + 0.12);
+      gain.gain.setValueAtTime(0.3, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.25);
+      osc.connect(gain);
+      gain.connect(sfxGain);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.25);
+    });
+    
+    // 低音伴奏
+    const bass = audioContext.createOscillator();
+    const bassGain = audioContext.createGain();
+    bass.type = 'triangle';
+    bass.frequency.value = 130;
+    bassGain.gain.setValueAtTime(0.2, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    bass.connect(bassGain);
+    bassGain.connect(sfxGain);
+    bass.start(now);
+    bass.stop(now + 0.4);
+    
+    showBroadcast('📈 升职加薪！', '#fb923c', 1000, { fontSize: 40, position: 'center' });
+  }
+  
+  // 四杀音效
+  function playQuadraKill(now) {
+    // 四个快速音符 + 华丽和声
+    [0, 0.05, 0.1, 0.15].forEach((delay, i) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = 'square';
+      const baseFreq = 440 + i * 220;
+      osc.frequency.setValueAtTime(baseFreq, now + delay);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.4, now + delay + 0.1);
+      gain.gain.setValueAtTime(0.35, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.2);
+      osc.connect(gain);
+      gain.connect(sfxGain);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.2);
+    });
+    
+    // 金属质感音效
+    const metal = audioContext.createOscillator();
+    const metalGain = audioContext.createGain();
+    metal.type = 'sawtooth';
+    metal.frequency.setValueAtTime(880, now);
+    metal.frequency.exponentialRampToValueAtTime(3520, now + 0.3);
+    metalGain.gain.setValueAtTime(0.15, now);
+    metalGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    metal.connect(metalGain);
+    metalGain.connect(sfxGain);
+    metal.start(now);
+    metal.stop(now + 0.5);
+    
+    showBroadcast('🏆 年度优秀！', '#f87171', 1200, { fontSize: 44, position: 'center' });
+  }
+  
+  // 五杀音效 - 最华丽
+  function playPentaKill(now) {
+    // 五个音符构成和弦
+    [0, 0.04, 0.08, 0.12, 0.16].forEach((delay, i) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = i % 2 === 0 ? 'square' : 'sawtooth';
+      const baseFreq = 523 + i * 196;
+      osc.frequency.setValueAtTime(baseFreq, now + delay);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + delay + 0.15);
+      gain.gain.setValueAtTime(0.4 - i * 0.05, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.3);
+      osc.connect(gain);
+      gain.connect(sfxGain);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.3);
+    });
+    
+    // 低音鼓点
+    const kick = audioContext.createOscillator();
+    const kickGain = audioContext.createGain();
+    kick.type = 'sine';
+    kick.frequency.setValueAtTime(150, now);
+    kick.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+    kickGain.gain.setValueAtTime(0.4, now);
+    kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    kick.connect(kickGain);
+    kickGain.connect(sfxGain);
+    kick.start(now);
+    kick.stop(now + 0.3);
+    
+    // 高音装饰
+    const high = audioContext.createOscillator();
+    const highGain = audioContext.createGain();
+    high.type = 'triangle';
+    high.frequency.value = 4186;
+    highGain.gain.setValueAtTime(0.1, now + 0.1);
+    highGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    high.connect(highGain);
+    highGain.connect(sfxGain);
+    high.start(now + 0.1);
+    high.stop(now + 0.4);
+    
+    showBroadcast('👑 财务之神！', '#c084fc', 1500, { isFlash: true, fontSize: 52, position: 'center' });
+  }
+
+  // 切换静音
+  function toggleMute() {
+    isMuted = !isMuted;
+    if (bgMusicGain) bgMusicGain.gain.value = isMuted ? 0 : 0.3;
+    return isMuted;
+  }
+
+  // AI死亡爆炸音效
+  function playAIDeathSound() {
+    if (!audioContext || isMuted) return;
+    const now = audioContext.currentTime;
+    
+    // 爆炸低音
+    const osc1 = audioContext.createOscillator();
+    const gain1 = audioContext.createGain();
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(200, now);
+    osc1.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+    gain1.gain.setValueAtTime(0.2, now);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc1.connect(gain1);
+    gain1.connect(sfxGain);
+    osc1.start(now);
+    osc1.stop(now + 0.3);
+    
+    // 爆炸噪声
+    const noise = audioContext.createBufferSource();
+    const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.2, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let j = 0; j < data.length; j++) {
+      data[j] = (Math.random() * 2 - 1) * (1 - j / data.length);
+    }
+    noise.buffer = buffer;
+    const noiseGain = audioContext.createGain();
+    noiseGain.gain.setValueAtTime(0.15, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+    noise.connect(noiseGain);
+    noiseGain.connect(sfxGain);
+    noise.start(now);
+    
+    // 金属碰撞声
+    const osc2 = audioContext.createOscillator();
+    const gain2 = audioContext.createGain();
+    osc2.type = 'square';
+    osc2.frequency.value = 800;
+    gain2.gain.setValueAtTime(0.1, now);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    osc2.connect(gain2);
+    gain2.connect(sfxGain);
+    osc2.start(now);
+    osc2.stop(now + 0.15);
+  }
+
+  // AI出生播报音效
+  function playAISpawnSound() {
+    if (!audioContext || isMuted) return;
+    const now = audioContext.currentTime;
+    
+    // 警报上升音
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.linearRampToValueAtTime(900, now + 0.3);
+    osc.frequency.linearRampToValueAtTime(600, now + 0.5);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.setValueAtTime(0.12, now + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    osc.connect(gain);
+    gain.connect(sfxGain);
+    osc.start(now);
+    osc.stop(now + 0.5);
+    
+    // 双音提示
+    const osc2 = audioContext.createOscillator();
+    const gain2 = audioContext.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.value = 440;
+    gain2.gain.setValueAtTime(0.08, now + 0.3);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+    osc2.connect(gain2);
+    gain2.connect(sfxGain);
+    osc2.start(now + 0.3);
+    osc2.stop(now + 0.6);
+  }
+
+  // 屏幕播报文字
+  let broadcastMessage = null;
+  function showBroadcast(text, color = '#ff6b6b', duration = 2000, options = {}) {
+    broadcastMessage = {
+      text: text,
+      color: color,
+      startTime: performance.now(),
+      duration: duration,
+      isFlash: options.isFlash || false,
+      fontSize: options.fontSize || 20,
+      position: options.position || 'top' // 'top', 'center'
+    };
+  }
+
+  function drawBroadcast(timestamp) {
+    if (!broadcastMessage) return;
+    // 使用 performance.now() 确保时间基准一致
+    const elapsed = performance.now() - broadcastMessage.startTime;
+    if (elapsed >= broadcastMessage.duration) {
+      broadcastMessage = null;
+      return;
+    }
+    
+    const progress = elapsed / broadcastMessage.duration;
+    let opacity = 1;
+    let scale = 1;
+    
+    if (broadcastMessage.isFlash) {
+      // 轻微闪烁效果：柔和脉动
+      const flashSpeed = 4;
+      const flashPhase = Math.sin(progress * Math.PI * flashSpeed);
+      opacity = 0.75 + flashPhase * 0.25;
+      scale = 1 + flashPhase * 0.05;
+    } else {
+      // 普通淡入淡出
+      if (progress < 0.1) opacity = progress / 0.1;
+      else if (progress > 0.7) opacity = 1 - (progress - 0.7) / 0.3;
+    }
+    
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = broadcastMessage.color;
+    
+    // 计算位置
+    let yPos = 40;
+    if (broadcastMessage.position === 'center') {
+      yPos = canvas.height / 2;
+    }
+    
+    // 应用缩放
+    ctx.translate(canvas.width / 2, yPos);
+    ctx.scale(scale, scale);
+    
+    ctx.font = `bold ${broadcastMessage.fontSize}px "Microsoft YaHei", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // 发光效果
+    if (broadcastMessage.isFlash) {
+      setGlow(broadcastMessage.color, 15);
+      ctx.fillText(broadcastMessage.text, 0, 0);
+    } else {
+      setGlow(broadcastMessage.color, 20);
+      ctx.fillText(broadcastMessage.text, 0, 0);
+    }
+    
+    clearGlow();
+    ctx.restore();
+  }
+
+  // ============================================================
+  // 网络通信
+  // ============================================================
+
+  // 获取服务器地址 (自动检测当前主机)
+  function getServerUrl() {
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    return `${protocol}//${host}`;
+  }
+
+  // 注册玩家（支持单机模式）
+  async function registerPlayer(name) {
+    try {
+      const res = await fetch(`${getServerUrl()}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (data.player_id) {
+        playerId = data.player_id;
+        playerName = data.name;
+        return true;
+      }
+    } catch (e) {
+      console.log('服务器不可用，切换到单机模式');
+      // 单机模式：生成本地ID
+      playerId = 'local_' + Date.now();
+      playerName = name;
+      return true;
+    }
+    return false;
+  }
+
+  // 更新分数
+  async function updateServerScore(status = 'playing') {
+    if (!playerId) return;
+    try {
+      await fetch(`${getServerUrl()}/api/score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: playerId,
+          score: score,
+          invoices: invoiceCount,
+          speed: speedMultiplier,
+          status: status
+        })
+      });
+    } catch (e) {
+      console.error('更新分数失败:', e);
+    }
+  }
+
+  // 更新玩家名字（游戏结束时录入）
+  async function updatePlayerName(newName) {
+    if (!playerId) return;
+    try {
+      await fetch(`${getServerUrl()}/api/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: playerId,
+          name: newName
+        })
+      });
+    } catch (e) {
+      console.error('更新名字失败:', e);
+    }
+  }
+
+  // 玩家离开
+  async function leaveGame() {
+    if (!playerId) return;
+    try {
+      await fetch(`${getServerUrl()}/api/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId })
+      });
+    } catch (e) {
+      console.error('离开失败:', e);
+    }
+  }
+
+  // 连接SSE实时数据流
+  function connectEventSource() {
+    const url = `${getServerUrl()}/api/events`;
+    eventSource = new EventSource(url);
+
+    eventSource.onopen = () => {
+      connectionStatus.textContent = '已连接';
+      connectionStatus.className = 'connection-status connected';
+    };
+
+    eventSource.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'leaderboard') {
+          allPlayers = data.data;
+          // 按唯一IP去重统计在线人数
+          const uniqueIps = [...new Set(allPlayers.map(p => p.ip).filter(Boolean))];
+          onlineCountEl.textContent = `${uniqueIps.length}人`;
+        }
+      } catch (err) {
+        console.error('解析数据失败:', err);
+      }
+    };
+
+    eventSource.onerror = () => {
+      connectionStatus.textContent = '连接断开';
+      connectionStatus.className = 'connection-status disconnected';
+      // 尝试重连
+      setTimeout(() => {
+        if (eventSource.readyState === EventSource.CLOSED) {
+          connectEventSource();
+        }
+      }, 3000);
+    };
+  }
+
+  // ============================================================
+  // 游戏初始化
+  // ============================================================
+  function resizeCanvas() {
+    // 扩大游戏区域：桌面900x900，移动端自适应
+    const isMobile = window.matchMedia('(max-width: 900px)').matches;
+    let maxW, maxH;
+    
+    if (isMobile) {
+      // 移动端：根据屏幕尺寸动态计算
+      // 留空间：HUD约80px，方向按钮约180px，边距20px
+      const availW = window.innerWidth - 20;
+      const availH = window.innerHeight - 280; // HUD + 方向按钮 + 边距
+      maxW = Math.min(availW, 450);
+      maxH = Math.min(availH, 400);
+      // 确保最小尺寸
+      maxW = Math.max(maxW, 300);
+      maxH = Math.max(maxH, 280);
+    } else {
+      // 桌面端：扩大到900x900
+      maxW = 900;
+      maxH = 900;
+    }
+    
+    cols = Math.floor(maxW / GRID);
+    rows = Math.floor(maxH / GRID);
+    cols = Math.max(cols, 15);
+    rows = Math.max(rows, 12);
+    canvas.width = cols * GRID;
+    canvas.height = rows * GRID;
+  }
+
+  function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function randFloat(min, max) { return Math.random() * (max - min) + min; }
+
+  const Easing = {
+    easeOutBack: (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
+    easeOutQuad: (t) => 1 - (1 - t) * (1 - t)
+  };
+
+  function initGame() {
+    resizeCanvas();
+    const startX = Math.floor(cols / 4);
+    const startY = Math.floor(rows / 2);
+    snake = [
+      { x: startX, y: startY, angle: 0 },
+      { x: startX - 1, y: startY, angle: 0, swingOffset: 0 },
+      { x: startX - 2, y: startY, angle: 0, swingOffset: 0 },
+    ];
+    direction = { x: 1, y: 0 };
+    nextDirection = { x: 1, y: 0 };
+    score = 0;
+    invoiceCount = 0;
+    speedMultiplier = 1.0;
+    foods = [];
+    danmakuList = [];
+    shakeOffset = { x: 0, y: 0 };
+    shakeDuration = 0;
+    aiSlowUntil = 0;
+    speedDebuff = 0;
+    playerSlowUntil = 0;
+    playerShield = false;
+    magnetUntil = 0;
+
+    // 生成审计员
+    aiSnakes = [];
+    aiSpawnTimer = performance.now();  // 初始化审计员生成计时器
+    spawnAISnake();  // 生成第一条审计员
+    spawnAISnake();  // 生成第二条审计员
+
+    initFloatingElements();
+    for (let i = 0; i < 30; i++) spawnFood();  // 初始30个发票
+
+    updateHUD();
+  }
+
+  function initFloatingElements() {
+    floatingElements = [];
+    const symbols = ['$', '¥', '€', '£', '💰', '💵', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    for (let i = 0; i < 15; i++) {
+      floatingElements.push({
+        x: randFloat(0, canvas.width), y: randFloat(0, canvas.height),
+        symbol: symbols[rand(0, symbols.length - 1)],
+        size: randFloat(12, 24), speedX: randFloat(-0.3, 0.3), speedY: randFloat(-0.2, 0.2),
+        opacity: randFloat(0.05, 0.15), phase: randFloat(0, Math.PI * 2)
+      });
+    }
+  }
+
+  function isOccupied(x, y) {
+    if (snake.some(s => s.x === x && s.y === y)) return true;
+    if (foods.some(f => f.x === x && f.y === y)) return true;
+    // 检查所有审计员
+    for (const ai of aiSnakes) {
+      if (ai.body.some(s => s.x === x && s.y === y)) return true;
+    }
+    return false;
+  }
+
+  function randomFreeCell() {
+    for (let i = 0; i < 500; i++) {
+      const x = rand(0, cols - 1), y = rand(0, rows - 1);
+      if (!isOccupied(x, y)) return { x, y };
+    }
+    return null;
+  }
+
+  function weightedRandom(items) {
+    const total = items.reduce((s, i) => s + i.weight, 0);
+    let r = Math.random() * total;
+    for (const item of items) {
+      r -= item.weight;
+      if (r <= 0) return item;
+    }
+    return items[0];
+  }
+
+  function spawnFood() {
+    const cell = randomFreeCell();
+    if (cell) foods.push({ ...cell, ...weightedRandom(INVOICE_TYPES), pulsePhase: randFloat(0, Math.PI * 2) });
+  }
+
+  // 生成审计员
+  function spawnAISnake() {
+    // 检查是否达到最大审计员数量
+    if (aiSnakes.length >= MAX_AI_SNAKES) return;
+
+    // 在远离玩家的位置生成审计员
+    let attempts = 0;
+    let bestPos = null;
+    let bestDir = null;
+    
+    const dirs = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
+    
+    while (attempts < 100) {
+      const cell = randomFreeCell();
+      if (cell) {
+        // 检查距离玩家蛇头至少10格
+        const head = snake[0];
+        if (head) {
+          const dist = Math.abs(cell.x - head.x) + Math.abs(cell.y - head.y);
+          if (dist >= 10) {
+            // 尝试所有方向，找到身体不会与玩家重叠的方向
+            for (const dir of dirs) {
+              const body = [
+                { x: cell.x, y: cell.y },
+                { x: cell.x - dir.x, y: cell.y - dir.y },
+                { x: cell.x - dir.x * 2, y: cell.y - dir.y * 2 }
+              ];
+              // 检查整个身体是否与玩家蛇身重叠
+              let overlap = false;
+              for (const seg of body) {
+                if (seg.x < 0 || seg.x >= cols || seg.y < 0 || seg.y >= rows) {
+                  overlap = true;
+                  break;
+                }
+                if (snake.some(s => s.x === seg.x && s.y === seg.y)) {
+                  overlap = true;
+                  break;
+                }
+              }
+              if (!overlap) {
+                bestPos = cell;
+                bestDir = dir;
+                break;
+              }
+            }
+            if (bestPos) break;
+          }
+        } else {
+          bestPos = cell;
+          bestDir = dirs[rand(0, dirs.length - 1)];
+          break;
+        }
+      }
+      attempts++;
+    }
+    
+    if (!bestPos) {
+      // 找不到合适位置，不生成审计员
+      console.log('找不到合适的审计员生成位置，跳过生成');
+      return;
+    }
+    
+    // 创建新的审计员对象
+    const newAI = {
+      body: [
+        { x: bestPos.x, y: bestPos.y },
+        { x: bestPos.x - bestDir.x, y: bestPos.y - bestDir.y },
+        { x: bestPos.x - bestDir.x * 2, y: bestPos.y - bestDir.y * 2 }
+      ],
+      direction: { ...bestDir },
+      nextDirection: { ...bestDir },
+      lastMoveTime: performance.now(),
+      moveInterval: 500,  // 固定移动间隔500ms
+      respawnTime: 0,     // 重生时间
+      color: `hsl(${rand(0, 360)}, 80%, 60%)`,  // 随机颜色
+      isDead: false,
+      eatenFoods: [],     // 记录吃掉的发票（死亡时爆出）
+      birthTime: performance.now()  // 出生时间（3秒内无敌）
+    };
+    
+    aiSnakes.push(newAI);
+    
+    // AI出生播报
+    playAISpawnSound();
+    showBroadcast(`⚠️ 新审计员出现！当前 ${aiSnakes.length} 条`, '#ff6b6b', 2000);
+  }
+
+  // 审计员死亡 - 爆出发票（接受ai对象或索引）
+  function killAISnake(aiOrIndex, deathX, deathY) {
+    const ai = (typeof aiOrIndex === 'number') ? aiSnakes[aiOrIndex] : aiOrIndex;
+    if (!ai) return;  // 安全检查
+
+    // 如果没传坐标，从ai头部获取
+    if (deathX === undefined || deathY === undefined) {
+      deathX = ai.body[0].x;
+      deathY = ai.body[0].y;
+    }
+
+    // 死亡爆发出票：战利品（500面额×5 + 100面额×5 = 共10张）
+    const deathInvoices = [
+      // 5张500元黄金发票
+      { name: '黄金', score: 500, bg: '#fffbeb', border: '#eab308', glow: 'rgba(234,179,8,0.9)', textColor: '#fde047', weight: 1, icon: '👑' },
+      { name: '黄金', score: 500, bg: '#fffbeb', border: '#eab308', glow: 'rgba(234,179,8,0.9)', textColor: '#fde047', weight: 1, icon: '👑' },
+      { name: '黄金', score: 500, bg: '#fffbeb', border: '#eab308', glow: 'rgba(234,179,8,0.9)', textColor: '#fde047', weight: 1, icon: '👑' },
+      { name: '黄金', score: 500, bg: '#fffbeb', border: '#eab308', glow: 'rgba(234,179,8,0.9)', textColor: '#fde047', weight: 1, icon: '👑' },
+      { name: '黄金', score: 500, bg: '#fffbeb', border: '#eab308', glow: 'rgba(234,179,8,0.9)', textColor: '#fde047', weight: 1, icon: '👑' },
+      // 5张100元红字发票
+      { name: '红字', score: 100, bg: '#fee2e2', border: '#ef4444', glow: 'rgba(239,68,68,0.7)', textColor: '#ef4444', weight: 1, icon: '🔴' },
+      { name: '红字', score: 100, bg: '#fee2e2', border: '#ef4444', glow: 'rgba(239,68,68,0.7)', textColor: '#ef4444', weight: 1, icon: '🔴' },
+      { name: '红字', score: 100, bg: '#fee2e2', border: '#ef4444', glow: 'rgba(239,68,68,0.7)', textColor: '#ef4444', weight: 1, icon: '🔴' },
+      { name: '红字', score: 100, bg: '#fee2e2', border: '#ef4444', glow: 'rgba(239,68,68,0.7)', textColor: '#ef4444', weight: 1, icon: '🔴' },
+      { name: '红字', score: 100, bg: '#fee2e2', border: '#ef4444', glow: 'rgba(239,68,68,0.7)', textColor: '#ef4444', weight: 1, icon: '🔴' },
+    ];
+    
+    // 打乱顺序
+    for (let i = deathInvoices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deathInvoices[i], deathInvoices[j]] = [deathInvoices[j], deathInvoices[i]];
+    }
+    
+    for (let i = 0; i < deathInvoices.length; i++) {
+      const offsetX = rand(-5, 5);
+      const offsetY = rand(-5, 5);
+      const spawnX = deathX + offsetX;
+      const spawnY = deathY + offsetY;
+      
+      if (spawnX >= 0 && spawnX < cols && spawnY >= 0 && spawnY < rows && !isOccupied(spawnX, spawnY)) {
+        foods.push({ 
+          x: spawnX, 
+          y: spawnY, 
+          ...deathInvoices[i], 
+          pulsePhase: randFloat(0, Math.PI * 2) 
+        });
+      }
+    }
+    
+    // 爆出审计员吃掉的发票（随机散布到地图上）
+    const eatenFoods = ai.eatenFoods || [];
+    if (eatenFoods.length > 0) {
+      for (const eaten of eatenFoods) {
+        let placed = false;
+        for (let attempt = 0; attempt < 50; attempt++) {
+          const rx = rand(0, cols - 1);
+          const ry = rand(0, rows - 1);
+          if (!isOccupied(rx, ry)) {
+            foods.push({
+              x: rx,
+              y: ry,
+              ...eaten,
+              pulsePhase: randFloat(0, Math.PI * 2)
+            });
+            placed = true;
+            break;
+          }
+        }
+      }
+      showBroadcast(`💥 审计员被消灭！吐出 ${eatenFoods.length} 张吃掉的发票！`, '#fbbf24', 2500);
+    } else if (!ai.isDead) {
+      showBroadcast(`💥 审计员被消灭！爆出发票战利品！`, '#fbbf24', 2000);
+    }
+    
+    // 设置重生时间（30秒后重生）
+    ai.isDead = true;
+    ai.respawnTime = performance.now() + 30000;
+    
+    // AI死亡音效
+    playAIDeathSound();
+  }
+
+  // 更新审计员 - 支持多条
+  function updateAISnake(currentTime) {
+    // 每40秒生成新审计员
+    if (currentTime - aiSpawnTimer >= AI_SPAWN_INTERVAL) {
+      spawnAISnake();
+      aiSpawnTimer = currentTime;
+    }
+
+    // 处理每条审计员
+    for (let i = aiSnakes.length - 1; i >= 0; i--) {
+      const ai = aiSnakes[i];
+      
+      // 检查是否需要重生
+      if (ai.isDead && currentTime >= ai.respawnTime) {
+        // 移除死掉的AI，生成新的
+        aiSnakes.splice(i, 1);
+        spawnAISnake();
+        continue;
+      }
+      
+      if (ai.isDead) continue;
+      
+      // 计算实际移动间隔（考虑定时发票减速效果）
+      let actualMoveInterval = ai.moveInterval;
+      if (currentTime < aiSlowUntil) {
+        actualMoveInterval *= 2;  // 减速50%（间隔翻倍）
+      }
+      
+      // 固定移动频率，不随身体增长加速
+      if (currentTime - ai.lastMoveTime < actualMoveInterval) continue;
+      ai.lastMoveTime = currentTime;
+      
+      // 增强智能：AI越长越倾向于追逐玩家（但优先吃身边的食物）
+      const chaseProbability = Math.min(0.5, 0.15 + (ai.body.length - 3) * 0.03);
+      const aiHead = ai.body[0];
+      
+      // 先检查身边是否有食物（优先吃）
+      let nearbyFood = null;
+      for (const food of foods) {
+        const dist = Math.abs(food.x - aiHead.x) + Math.abs(food.y - aiHead.y);
+        if (dist <= 3) {  // 3格内的食物
+          if (!nearbyFood || food.score > nearbyFood.score) {
+            nearbyFood = food;
+          }
+        }
+      }
+      
+      const targetPlayer = !nearbyFood && Math.random() < chaseProbability;
+      
+      // 确定目标位置
+      let target;
+      if (nearbyFood) {
+        target = nearbyFood;  // 优先吃身边的食物
+      } else if (targetPlayer && snake[0]) {
+        target = snake[0];  // 追逐玩家蛇头
+      } else {
+        // 找最近的食物（优先高价值食物）
+        let bestFood = null;
+        let bestScore = -Infinity;
+        for (const food of foods) {
+          const dist = Math.abs(food.x - aiHead.x) + Math.abs(food.y - aiHead.y);
+          // 距离越近分数越高，食物价值越高分数越高
+          const foodScore = food.score || 10;
+          const score = (100 - dist) + foodScore * 2;
+          if (score > bestScore) {
+            bestScore = score;
+            bestFood = food;
+          }
+        }
+        target = bestFood || { x: Math.floor(cols / 2), y: Math.floor(rows / 2) };
+      }
+      
+      // 计算最佳方向
+      const possibleDirs = [
+        { x: 1, y: 0 }, { x: -1, y: 0 },
+        { x: 0, y: 1 }, { x: 0, y: -1 }
+      ];
+      
+      let bestDir = ai.direction;
+      let bestScore = -Infinity;
+      
+      for (const dir of possibleDirs) {
+        // 不能180度掉头
+        if (dir.x === -ai.direction.x && dir.y === -ai.direction.y) continue;
+        
+        const newX = aiHead.x + dir.x;
+        const newY = aiHead.y + dir.y;
+        
+        // 检查边界
+        if (newX < 0 || newX >= cols || newY < 0 || newY >= rows) continue;
+        
+        // 检查是否撞到自己
+        if (ai.body.slice(0, -1).some(s => s.x === newX && s.y === newY)) continue;
+        
+        // 检查是否撞到其他审计员
+        let hitOtherAI = false;
+        for (let j = 0; j < aiSnakes.length; j++) {
+          if (i === j) continue;
+          if (aiSnakes[j].body.some(s => s.x === newX && s.y === newY)) {
+            hitOtherAI = true;
+            break;
+          }
+        }
+        if (hitOtherAI) continue;
+        
+        // 检查是否撞到玩家蛇身（避开玩家身体，但可以追玩家头）
+        if (snake.slice(1).some(s => s.x === newX && s.y === newY)) continue;
+        
+        // 计算到目标的距离
+        const dist = Math.abs(target.x - newX) + Math.abs(target.y - newY);
+        const score = 100 - dist + randFloat(0, 10);
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestDir = dir;
+        }
+      }
+      
+      ai.nextDirection = bestDir;
+      ai.direction = bestDir;
+      
+      // 移动审计员
+      const newHead = {
+        x: aiHead.x + ai.direction.x,
+        y: aiHead.y + ai.direction.y
+      };
+      
+      // 检查是否吃到食物（审计员忽略所有道具发票）
+      const foodIndex = foods.findIndex(f => f.x === newHead.x && f.y === newHead.y && !f.isTimer && !f.isMagnet && !f.isShield && !f.isBomb && !f.isHeal);
+      const ateFood = foodIndex !== -1;
+      
+      if (ateFood) {
+        // AI吃食物：变长并记录
+        ai.body.unshift(newHead);
+        const eaten = foods.splice(foodIndex, 1)[0];
+        if (eaten) ai.eatenFoods.push({ ...eaten });  // 记录吃掉的发票
+      } else {
+        ai.body.unshift(newHead);
+        ai.body.pop();
+      }
+      
+      // 检查AI是否撞到玩家蛇头（头对头碰撞）
+      if (snake[0] && newHead.x === snake[0].x && newHead.y === snake[0].y) {
+        // AI撞到玩家头，AI死亡并爆出发票
+        killAISnake(i, newHead.x, newHead.y);
+        triggerShake(200);
+        continue;
+      }
+      
+      // 检查AI头是否撞到玩家蛇身
+      if (snake.slice(1).some(s => s.x === newHead.x && s.y === newHead.y)) {
+        killAISnake(i, newHead.x, newHead.y);
+        triggerShake(200);
+        continue;
+      }
+      
+      // 检查审计员互撞（头撞到其他审计员身体）
+      for (let j = 0; j < aiSnakes.length; j++) {
+        if (i === j || aiSnakes[j].isDead) continue;
+        const otherBody = aiSnakes[j].body;
+        // 检查是否撞到其他审计员的身体（不包括头）
+        if (otherBody.slice(1).some(s => s.x === newHead.x && s.y === newHead.y)) {
+          // 当前AI死亡
+          killAISnake(i, newHead.x, newHead.y);
+          triggerShake(200);
+          i--;  // 修正索引
+          break;
+        }
+        // 检查头对头碰撞
+        if (otherBody[0].x === newHead.x && otherBody[0].y === newHead.y) {
+          // 两条AI都死亡
+          killAISnake(i, newHead.x, newHead.y);
+          killAISnake(j, otherBody[0].x, otherBody[0].y);
+          triggerShake(300);
+          i--;  // 修正索引
+          break;
+        }
+      }
+    }
+  }
+
+  function spawnDanmaku(x, y, type) {
+    let messages, color;
+    switch(type) {
+      case 'electronic': messages = DANMAKU_MESSAGES.electronic; color = '#4ade80'; break;
+      case 'special': messages = DANMAKU_MESSAGES.special; color = '#fbbf24'; break;
+      case 'vat': messages = DANMAKU_MESSAGES.vat; color = '#f59e0b'; break;
+      case 'red': messages = DANMAKU_MESSAGES.red; color = '#ef4444'; break;
+      case 'diamond': messages = DANMAKU_MESSAGES.diamond; color = '#c084fc'; break;
+      case 'gold': messages = DANMAKU_MESSAGES.gold; color = '#fde047'; break;
+      default: messages = DANMAKU_MESSAGES.normal; color = '#60a5fa';
+    }
+    const msg = messages[rand(0, messages.length - 1)];
+    danmakuList.push({
+      x: x * GRID + GRID / 2, y: y * GRID,
+      text: `${msg}（¥${score}）`, color: color,
+      startTime: performance.now(), duration: 2000,
+      initialY: y * GRID, scale: 0, opacity: 0
+    });
+  }
+
+  function updateDanmaku(currentTime) {
+    for (let i = danmakuList.length - 1; i >= 0; i--) {
+      const d = danmakuList[i];
+      const progress = Math.min((currentTime - d.startTime) / d.duration, 1);
+      if (progress >= 1) { danmakuList.splice(i, 1); continue; }
+
+      d.scale = Easing.easeOutBack(Math.min(progress * 3, 1)) * 1.2;
+      d.y = d.initialY - Easing.easeOutQuad(progress) * 60;
+      d.opacity = progress > 0.7 ? 1 - (progress - 0.7) / 0.3 : Math.min(progress * 2, 1);
+    }
+  }
+
+  // 粒子系统
+  function spawnParticles(x, y, color) {
+    const neonColors = ['#00e5ff', '#e040fb', '#7c4dff', '#ff4081', '#ffea00', '#00e676', '#ff6e40', '#40c4ff'];
+    const baseColor = color || neonColors[rand(0, neonColors.length - 1)];
+    
+    // 功能道具特殊效果
+    const isSpecial = ['#06b6d4', '#ec4899', '#0ea5e9', '#dc2626', '#16a34a'].includes(color);
+    const particleCount = isSpecial ? 30 : 20;
+    const particleSpeed = isSpecial ? 120 : 80;
+    const particleSize = isSpecial ? 4 : 3;
+    
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (Math.PI * 2 / particleCount) * i + randFloat(-0.2, 0.2);
+      const speed = randFloat(particleSpeed * 0.5, particleSpeed);
+      particles.push({
+        x: x * GRID + GRID / 2,
+        y: y * GRID + GRID / 2,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: randFloat(particleSize, particleSize + 2),
+        color: baseColor,
+        life: 0,
+        maxLife: isSpecial ? 600 : 500,
+        startTime: performance.now()
+      });
+    }
+    
+    // 功能道具添加中心光环爆发
+    if (isSpecial) {
+      particles.push({
+        x: x * GRID + GRID / 2,
+        y: y * GRID + GRID / 2,
+        vx: 0,
+        vy: 0,
+        size: 15,
+        color: baseColor,
+        life: 0,
+        maxLife: 400,
+        startTime: performance.now(),
+        isRing: true
+      });
+    }
+  }
+
+  function updateParticles(currentTime) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      const elapsed = currentTime - p.startTime;
+      if (elapsed >= p.maxLife) { particles.splice(i, 1); continue; }
+      const progress = elapsed / p.maxLife;
+      p.x += p.vx * 0.016;
+      p.y += p.vy * 0.016;
+      p.vx *= 0.96;
+      p.vy *= 0.96;
+      p.opacity = 1 - progress;
+      p.size *= 0.995;
+    }
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.opacity);
+      
+      if (p.isRing) {
+        // 绘制光环爆发效果
+        const progress = 1 - p.opacity;
+        const ringSize = p.size + progress * 40;
+        const ringAlpha = p.opacity * 0.6;
+        setGlow(p.color, 15);
+        ctx.strokeStyle = p.color;
+        ctx.globalAlpha = ringAlpha;
+        ctx.lineWidth = 3 * p.opacity;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, ringSize, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        // 普通粒子
+        setGlow(p.color, 10);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(0.5, p.size), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    clearGlow();
+  }
+
+  function updateHUD() {
+    document.getElementById('scoreDisplay').textContent = `¥${score}`;
+    document.getElementById('invoiceDisplay').textContent = `${invoiceCount}张`;
+    document.getElementById('speedDisplay').textContent = `×${speedMultiplier.toFixed(1)}`;
+  }
+
+  function triggerShake(duration = 200) {
+    shakeDuration = duration;
+    if (navigator.vibrate) navigator.vibrate(100);
+  }
+
+  function checkCollision(head, timestamp) {
+    if (head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows) return 'wall';
+    for (let i = 1; i < snake.length; i++) if (snake[i].x === head.x && snake[i].y === head.y) return 'self';
+    // 检查是否撞到任何审计员身体（出生后3秒内无敌）
+    for (let i = 0; i < aiSnakes.length; i++) {
+      const ai = aiSnakes[i];
+      if (!ai.isDead && timestamp - ai.birthTime > 3000 && ai.body.some(s => s.x === head.x && s.y === head.y)) {
+        // 护盾保护：抵挡一次撞击，消耗护盾并消灭该审计员
+        if (playerShield) {
+          playerShield = false;
+          showBroadcast('🛡️ 护盾抵挡了撞击！审计员被反杀！', '#0ea5e9', 3000);
+          // 延迟一点再杀，避免影响当前循环
+          setTimeout(() => killAISnake(ai), 0);
+          return null;  // 不死亡
+        }
+        return 'ai';
+      }
+    }
+    return null;
+  }
+
+  // 收集指定位置的发票（通用函数，供update和磁铁调用）
+  function collectFoodAt(targetX, targetY, timestamp) {
+    for (let i = foods.length - 1; i >= 0; i--) {
+      if (foods[i].x === targetX && foods[i].y === targetY) {
+        const currentTime = performance.now();
+        
+        // 连击系统
+        if (currentTime - lastEatTime < COMBO_WINDOW) {
+          comboCount++;
+        } else {
+          comboCount = 1;
+        }
+        lastEatTime = currentTime;
+        
+        // 计算连击奖励
+        let comboBonus = 0;
+        if (comboCount === 2) comboBonus = foods[i].score * 0.5;
+        else if (comboCount === 3) comboBonus = foods[i].score * 1.0;
+        else if (comboCount >= 4) comboBonus = foods[i].score * 2.0;
+        
+        const foodName = foods[i].name;
+        const isTimerFood = foods[i].isTimer;
+        const isMagnetFood = foods[i].isMagnet;
+        const isShieldFood = foods[i].isShield;
+        const isBombFood = foods[i].isBomb;
+        const isHealFood = foods[i].isHeal;
+        const isPowerUp = isTimerFood || isMagnetFood || isShieldFood || isBombFood || isHealFood;
+        
+        // ===== 道具发票处理 =====
+        if (isTimerFood) {
+          const now = performance.now();
+          aiSlowUntil = now + 10000;  // AI减速持续10秒
+          
+          const currentSpeed = Math.max(1.0, speedMultiplier);
+          if (currentSpeed > 1.5) {
+            // 速度>1.5：永久降低0.5倍（通过增加惩罚实现）
+            speedDebuff += 0.5;
+            showBroadcast(`⏰ 定时发票！速度永久降低！`, '#06b6d4', 3000);
+          } else {
+            // 速度≤1.5：降到1.0，持续10秒
+            playerSlowUntil = now + 10000;
+            showBroadcast('⏰ 定时发票！速度暂时降至×1.0！持续10秒', '#06b6d4', 3000);
+          }
+          spawnDanmaku(targetX, targetY, 'timer');
+          spawnParticles(targetX, targetY, '#06b6d4');
+          playEatSound(1);
+          foods.splice(i, 1);
+        } else if (isMagnetFood) {
+          magnetUntil = performance.now() + 5000;
+          showBroadcast('🧲 磁铁发票！5秒内自动吸引周围发票！', '#ec4899', 3000);
+          spawnDanmaku(targetX, targetY, 'magnet');
+          spawnParticles(targetX, targetY, '#ec4899');
+          playEatSound(1);
+          foods.splice(i, 1);
+        } else if (isShieldFood) {
+          playerShield = true;
+          showBroadcast('🛡️ 护盾发票！获得护盾，可抵挡一次审计员撞击！', '#0ea5e9', 3000);
+          spawnDanmaku(targetX, targetY, 'shield');
+          spawnParticles(targetX, targetY, '#0ea5e9');
+          playEatSound(1);
+          foods.splice(i, 1);
+        } else if (isBombFood) {
+          const aliveAIs = aiSnakes.filter(ai => !ai.isDead);
+          for (const ai of aliveAIs) {
+            killAISnake(ai);
+          }
+          showBroadcast(`💣 炸弹发票！消灭了 ${aliveAIs.length} 条审计员！`, '#dc2626', 3000);
+          spawnDanmaku(targetX, targetY, 'bomb');
+          spawnParticles(targetX, targetY, '#dc2626');
+          for (let p = 0; p < 30; p++) {
+            spawnParticles(rand(0, cols), rand(0, rows), '#dc2626');
+          }
+          playEatSound(1);
+          foods.splice(i, 1);
+        } else if (isHealFood) {
+          const removeCount = Math.max(0, Math.floor(snake.length * 0.5));
+          const newLength = Math.max(2, snake.length - removeCount);
+          const actualRemoved = snake.length - newLength;
+          if (actualRemoved > 0) {
+            snake.length = newLength;
+            showBroadcast(`💊 治疗发票！身体缩短了50%（${actualRemoved}节）！`, '#16a34a', 3000);
+          } else {
+            showBroadcast('💊 治疗发票！身体太短无法再缩短！', '#16a34a', 2000);
+          }
+          spawnDanmaku(targetX, targetY, 'heal');
+          spawnParticles(targetX, targetY, '#16a34a');
+          playEatSound(1);
+          foods.splice(i, 1);
+        } else {
+          // ===== 普通发票处理 =====
+          const type = foodName === '电子' ? 'electronic' : (foodName === '专票' ? 'special' : (foodName === '增值税' ? 'vat' : (foodName === '红字' ? 'red' : (foodName === '钻石' ? 'diamond' : (foodName === '黄金' ? 'gold' : 'normal')))));
+          const foodColor = foods[i].border;
+          score += foods[i].score + comboBonus;
+          invoiceCount++;
+          spawnDanmaku(targetX, targetY, type);
+          spawnParticles(targetX, targetY, foodColor);
+          playEatSound(comboCount);
+          triggerShake(150);
+          foods.splice(i, 1);
+        }
+        
+        // 更新连击显示
+        if (comboCount >= 2) {
+          const comboDisplay = document.getElementById('comboDisplay');
+          const comboValue = document.getElementById('comboValue');
+          comboDisplay.style.display = 'flex';
+          comboValue.textContent = `×${comboCount}`;
+          comboValue.style.fontSize = comboCount >= 4 ? '20px' : '16px';
+        }
+        
+        // 同步到服务器
+        updateServerScore('playing');
+        
+        // 返回是否吃了普通发票（需要增长身体）
+        return !isPowerUp;
+      }
+    }
+    return false;
+  }
+
+  function update(timestamp) {
+    // 速度已在外部计算（基础速度 - 惩罚）
+    const moveInterval = BASE_SPEED / speedMultiplier;
+    if (timestamp - lastMoveTime < moveInterval) return;
+    lastMoveTime = timestamp;
+
+    direction = { ...nextDirection };
+
+    let headAngle = 0;
+    if (direction.x === 1) headAngle = 0;
+    else if (direction.x === -1) headAngle = Math.PI;
+    else if (direction.y === -1) headAngle = -Math.PI / 2;
+    else if (direction.y === 1) headAngle = Math.PI / 2;
+
+    const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y, angle: headAngle };
+
+    const collision = checkCollision(head, timestamp);
+    if (collision) { gameOver(); return; }
+
+    snake.unshift(head);
+    for (let i = 1; i < snake.length; i++) snake[i].swingOffset = Math.sin(timestamp / 200 + i * 0.5) * 2;
+
+    // 收集头部位置的发票
+    const ate = collectFoodAt(head.x, head.y, timestamp);
+
+    if (!ate) {
+      snake.pop();
+      // 重置连击
+      comboCount = 0;
+      document.getElementById('comboDisplay').style.display = 'none';
+    } else {
+      // 进化加速：每吃一个食物额外增长1-2节
+      const extraGrowth = rand(1, 2);
+      const tail = snake[snake.length - 1];
+      for (let g = 0; g < extraGrowth; g++) {
+        snake.push({ x: tail.x, y: tail.y, angle: 0, swingOffset: 0 });
+      }
+    }
+
+    // 速度计算：基础速度(上限2.0) - 惩罚 + 临时减速
+    const baseSpeed = Math.min(2.0, 1 + Math.floor(score / SCORE_SPEED_STEP) * SPEED_INCREMENT);
+    if (timestamp < playerSlowUntil) {
+      // 临时减速：降到1.0
+      speedMultiplier = 1.0;
+    } else {
+      speedMultiplier = Math.max(1.0, baseSpeed - speedDebuff);
+    }
+
+    // 发票持续生成（每8秒生成）
+    if (timestamp - foodSpawnTimer >= FOOD_SPAWN_INTERVAL) {
+      const spawnCount = rand(6, 10);  // 每次生成6-10个
+      for (let i = 0; i < spawnCount; i++) {
+        spawnFood();
+      }
+      foodSpawnTimer = timestamp;
+    }
+
+    // 检查段位提升
+    checkRankUp();
+    updateRankDisplay();
+    updateHUD();
+  }
+
+  // 更新段位显示UI
+  function updateRankDisplay() {
+    const rankIcon = document.getElementById('rankIcon');
+    const rankName = document.getElementById('rankName');
+    const rankTitle = document.getElementById('rankTitle');
+    const rankBar = document.getElementById('rankBar');
+    const rankNext = document.getElementById('rankNext');
+    
+    if (!rankIcon) return;
+    
+    rankIcon.textContent = currentRank.headIcon;
+    rankName.textContent = currentRank.name;
+    rankName.style.color = currentRank.bodyColor;
+    rankName.style.textShadow = `0 0 8px ${currentRank.bodyGlow}`;
+    rankTitle.textContent = currentRank.title;
+    
+    // 计算进度条
+    const rankIndex = RANKS.indexOf(currentRank);
+    if (rankIndex < RANKS.length - 1) {
+      const nextRank = RANKS[rankIndex + 1];
+      const progress = ((score - currentRank.minScore) / (nextRank.minScore - currentRank.minScore)) * 100;
+      rankBar.style.width = Math.min(100, Math.max(0, progress)) + '%';
+      rankNext.textContent = `下一级：${nextRank.name} (${nextRank.minScore}分)`;
+      rankNext.style.display = 'block';
+    } else {
+      rankBar.style.width = '100%';
+      rankNext.textContent = '已达最高段位！';
+      rankNext.style.color = '#fde047';
+    }
+  }
+
+  // 渲染
+  function setGlow(color, blur = 15) { ctx.shadowColor = color; ctx.shadowBlur = blur; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; }
+  function clearGlow() { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; }
+
+  function drawBackground(timestamp) {
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, 'rgba(8,5,30,0.95)');
+    gradient.addColorStop(0.5, 'rgba(15,10,50,0.9)');
+    gradient.addColorStop(1, 'rgba(8,5,30,0.95)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    for (const elem of floatingElements) {
+      elem.x += elem.speedX; elem.y += elem.speedY; elem.phase += 0.02;
+      if (elem.x < -30) elem.x = canvas.width + 30;
+      if (elem.x > canvas.width + 30) elem.x = -30;
+      if (elem.y < -30) elem.y = canvas.height + 30;
+      if (elem.y > canvas.height + 30) elem.y = -30;
+      ctx.globalAlpha = elem.opacity;
+      ctx.fillStyle = '#64748b';
+      ctx.font = `${elem.size}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(elem.symbol, elem.x, elem.y + Math.sin(elem.phase) * 10);
+    }
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(120,80,255,0.06)';
+    ctx.lineWidth = 0.5;
+    clearGlow();
+    for (let x = 0; x <= cols; x++) { ctx.beginPath(); ctx.moveTo(x * GRID, 0); ctx.lineTo(x * GRID, canvas.height); ctx.stroke(); }
+    for (let y = 0; y <= rows; y++) { ctx.beginPath(); ctx.moveTo(0, y * GRID); ctx.lineTo(canvas.width, y * GRID); ctx.stroke(); }
+  }
+
+  function drawSnake(timestamp) {
+    const rank = currentRank;
+    const len = snake.length;
+    
+    // 护盾效果：蛇身周围蓝色光环
+    if (playerShield) {
+      for (let i = 0; i < len; i++) {
+        const seg = snake[i];
+        const px = seg.x * GRID + GRID / 2, py = seg.y * GRID + GRID / 2;
+        ctx.save();
+        setGlow('#0ea5e9', 20 + Math.sin(timestamp / 300 + i) * 5);
+        ctx.beginPath();
+        ctx.arc(px, py, GRID * 0.7, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(14,165,233,0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        clearGlow();
+        ctx.restore();
+      }
+    }
+    
+    // 根据长度决定形态参数
+    let headRadius, bodyRadius, tailShrink, glowSize;
+    if (len <= 5) {
+      // 短蛇：小巧圆润
+      headRadius = GRID * 0.6;
+      bodyRadius = GRID * 0.45;
+      tailShrink = 0.6;
+      glowSize = 12;
+    } else if (len <= 15) {
+      // 中等：标准光珠
+      headRadius = GRID * 0.65;
+      bodyRadius = GRID * 0.42;
+      tailShrink = 0.5;
+      glowSize = 15;
+    } else if (len <= 30) {
+      // 长蛇：更大光珠
+      headRadius = GRID * 0.7;
+      bodyRadius = GRID * 0.4;
+      tailShrink = 0.4;
+      glowSize = 18;
+    } else {
+      // 超长蛇：华丽大光珠
+      headRadius = GRID * 0.75;
+      bodyRadius = GRID * 0.38;
+      tailShrink = 0.3;
+      glowSize = 22;
+    }
+    
+    // 绘制蛇身连接线（光珠之间的能量线）
+    if (len > 1) {
+      ctx.save();
+      ctx.lineWidth = Math.max(2, bodyRadius * 0.5);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      for (let i = 0; i < len - 1; i++) {
+        const seg1 = snake[i], seg2 = snake[i + 1];
+        const x1 = seg1.x * GRID + GRID / 2, y1 = seg1.y * GRID + GRID / 2;
+        const x2 = seg2.x * GRID + GRID / 2, y2 = seg2.y * GRID + GRID / 2;
+        const progress = i / (len - 1);
+        const alpha = 0.3 * (1 - progress * 0.6);
+        
+        if (rank.name === 'CFO' || rank.name === '财神') {
+          const hue = (i * 15 + timestamp / 20) % 360;
+          ctx.strokeStyle = `hsla(${hue}, 90%, 60%, ${alpha})`;
+        } else {
+          ctx.strokeStyle = rank.bodyGlow.replace(/[\d.]+\)$/, `${alpha})`);
+        }
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    
+    // 从尾到头绘制（头在最上层）
+    for (let i = len - 1; i >= 0; i--) {
+      const seg = snake[i];
+      const px = seg.x * GRID + GRID / 2, py = seg.y * GRID + GRID / 2;
+      const progress = i / Math.max(1, len - 1); // 0=尾, 1=头
+      const swingX = Math.sin(timestamp / 150 + i * 0.3) * 1.2;
+      const swingY = Math.sin(timestamp / 150 + i * 0.3) * 1.5;
+
+      if (i === 0) {
+        // ===== 蛇头 =====
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(seg.angle);
+        
+        // 头部外发光
+        setGlow(rank.bodyGlow, glowSize + 8);
+        ctx.beginPath();
+        ctx.arc(0, 0, headRadius, 0, Math.PI * 2);
+        ctx.fillStyle = rank.bodyGlow.replace(/[\d.]+\)$/, '0.2)');
+        ctx.fill();
+        clearGlow();
+        
+        // 头部主体 - 椭圆形状（前后方向更长）
+        const headGrad = ctx.createRadialGradient(0, -headRadius * 0.2, 0, 0, 0, headRadius);
+        headGrad.addColorStop(0, 'rgba(255,255,255,0.35)');
+        headGrad.addColorStop(0.4, rank.bodyGlow.replace(/[\d.]+\)$/, '0.5)'));
+        headGrad.addColorStop(1, rank.bodyGlow.replace(/[\d.]+\)$/, '0.2)'));
+        ctx.beginPath();
+        ctx.ellipse(0, 0, headRadius * 1.1, headRadius * 0.9, 0, 0, Math.PI * 2);
+        ctx.fillStyle = headGrad;
+        ctx.fill();
+        ctx.strokeStyle = rank.bodyColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 眼睛（在头部前方）
+        const eyeOffset = headRadius * 0.35;
+        const eyeY = -headRadius * 0.15;
+        const eyeSize = headRadius * 0.18;
+        
+        // 左眼
+        ctx.beginPath();
+        ctx.arc(eyeOffset, eyeY - eyeSize * 0.3, eyeSize, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(eyeOffset + eyeSize * 0.3, eyeY - eyeSize * 0.1, eyeSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+        
+        // 右眼
+        ctx.beginPath();
+        ctx.arc(eyeOffset, eyeY + eyeSize * 0.8, eyeSize, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(eyeOffset + eyeSize * 0.3, eyeY + eyeSize * 1.0, eyeSize * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+        
+        // 段位图标（在头部后方）
+        ctx.font = `${headRadius * 1.2}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.globalAlpha = 0.8;
+        ctx.fillText(rank.headIcon, -headRadius * 0.4, 0);
+        ctx.globalAlpha = 1;
+        
+        ctx.restore();
+        clearGlow();
+      } else {
+        // ===== 蛇身光珠 =====
+        ctx.save();
+        ctx.translate(px + swingX, py + swingY);
+        
+        // 从头到尾逐渐缩小
+        const shrink = 1 - (1 - progress) * (1 - tailShrink);
+        const radius = bodyRadius * shrink;
+        const glowIntensity = 0.3 + progress * 0.5;
+        
+        let bodyColor, bodyGlowColor;
+        if (rank.name === 'CFO' || rank.name === '财神') {
+          const hue = (i * 15 + timestamp / 20) % 360;
+          bodyColor = `hsl(${hue}, 90%, 60%)`;
+          bodyGlowColor = `hsla(${hue}, 90%, 60%, ${glowIntensity})`;
+        } else {
+          bodyColor = rank.bodyColor;
+          bodyGlowColor = rank.bodyGlow.replace(/[\d.]+\)$/, `${glowIntensity})`);
+        }
+        
+        // 光珠外发光
+        setGlow(bodyGlowColor, glowSize * shrink * 0.8);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fillStyle = bodyGlowColor.replace(/[\d.]+\)$/, '0.12)');
+        ctx.fill();
+        clearGlow();
+        
+        // 光珠主体（径向渐变）
+        const grad = ctx.createRadialGradient(-radius * 0.2, -radius * 0.2, 0, 0, 0, radius);
+        grad.addColorStop(0, 'rgba(255,255,255,0.3)');
+        grad.addColorStop(0.5, bodyGlowColor.replace(/[\d.]+\)$/, '0.4)'));
+        grad.addColorStop(1, bodyGlowColor.replace(/[\d.]+\)$/, '0.15)'));
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        
+        // 边框
+        ctx.strokeStyle = bodyColor;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.6;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        
+        // 小高光点
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath();
+        ctx.arc(-radius * 0.3, -radius * 0.3, radius * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      }
+    }
+    clearGlow();
+  }
+
+  // 绘制审计员 - 支持多条
+  function drawAISnake(timestamp) {
+    for (const ai of aiSnakes) {
+      if (ai.isDead) continue;
+
+      const body = ai.body;
+      const color = ai.color;
+      const len = body.length;
+      
+      // AI蛇身连接线
+      if (len > 1) {
+        ctx.save();
+        ctx.lineWidth = Math.max(2, GRID * 0.2);
+        ctx.lineCap = 'round';
+        for (let i = 0; i < len - 1; i++) {
+          const s1 = body[i], s2 = body[i + 1];
+          const x1 = s1.x * GRID + GRID / 2, y1 = s1.y * GRID + GRID / 2;
+          const x2 = s2.x * GRID + GRID / 2, y2 = s2.y * GRID + GRID / 2;
+          const alpha = 0.2 * (1 - (i / (len - 1)) * 0.6);
+          ctx.strokeStyle = color.replace(')', `, ${alpha})`).replace('hsl', 'hsla');
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      for (let i = len - 1; i >= 0; i--) {
+        const seg = body[i];
+        const px = seg.x * GRID + GRID / 2, py = seg.y * GRID + GRID / 2;
+        const progress = i / Math.max(1, len - 1);
+        const swingY = Math.sin(timestamp / 150 + i * 0.3) * 1.2;
+
+        if (i === 0) {
+          // 审计员头 - 光珠风格
+          ctx.save();
+          ctx.translate(px, py);
+          const headR = GRID * 0.6;
+          setGlow(color, 20);
+          ctx.beginPath();
+          ctx.arc(0, 0, headR, 0, Math.PI * 2);
+          ctx.fillStyle = color.replace(')', ', 0.25)').replace('hsl', 'hsla');
+          ctx.fill();
+          clearGlow();
+          const hGrad = ctx.createRadialGradient(0, -headR * 0.3, 0, 0, 0, headR);
+          hGrad.addColorStop(0, 'rgba(255,255,255,0.2)');
+          hGrad.addColorStop(1, color.replace(')', ', 0.15)').replace('hsl', 'hsla'));
+          ctx.beginPath();
+          ctx.arc(0, 0, headR, 0, Math.PI * 2);
+          ctx.fillStyle = hGrad;
+          ctx.fill();
+          ctx.font = `${headR * 1.3}px serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('🕵️', 0, 1);
+          ctx.restore();
+        } else {
+          // 审计员身体 - 光珠风格
+          ctx.save();
+          ctx.translate(px, py + swingY);
+          const shrink = 0.5 + progress * 0.4;
+          const radius = GRID * 0.35 * shrink;
+          const glowIntensity = 0.2 + progress * 0.4;
+          
+          setGlow(color.replace(')', `, ${glowIntensity})`).replace('hsl', 'hsla'), 12 * shrink);
+          ctx.beginPath();
+          ctx.arc(0, 0, radius, 0, Math.PI * 2);
+          ctx.fillStyle = color.replace(')', `, ${glowIntensity * 0.4})`).replace('hsl', 'hsla');
+          ctx.fill();
+          clearGlow();
+          
+          const bGrad = ctx.createRadialGradient(-radius * 0.2, -radius * 0.2, 0, 0, 0, radius);
+          bGrad.addColorStop(0, 'rgba(255,255,255,0.15)');
+          bGrad.addColorStop(1, color.replace(')', `, ${glowIntensity * 0.2})`).replace('hsl', 'hsla'));
+          ctx.beginPath();
+          ctx.arc(0, 0, radius, 0, Math.PI * 2);
+          ctx.fillStyle = bGrad;
+          ctx.fill();
+          
+          if (len <= 15 || i % 2 === 0) {
+            ctx.font = `${radius * 1.2}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.globalAlpha = 0.5 + progress * 0.4;
+            ctx.fillText('🐍', 0, 0);
+            ctx.globalAlpha = 1;
+          }
+          ctx.restore();
+        }
+      }
+    }
+    clearGlow();
+  }
+
+  function drawFoods(timestamp) {
+    for (const food of foods) {
+      const px = food.x * GRID, py = food.y * GRID;
+      const pulse = Math.sin(timestamp / 300 + food.pulsePhase) * 0.15 + 1;
+      ctx.save();
+      ctx.translate(px + GRID / 2, py + GRID / 2);
+      ctx.scale(pulse, pulse);
+      setGlow(food.glow, 20 * pulse);
+      ctx.fillStyle = food.bg;
+      ctx.strokeStyle = food.border;
+      ctx.lineWidth = 2;
+      const rx = -GRID/2 + 2, ry = -GRID/2 + 2, rw = GRID - 4, rh = GRID - 4, r = 4;
+      ctx.beginPath();
+      ctx.moveTo(rx + r, ry);
+      ctx.lineTo(rx + rw - r, ry);
+      ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + r);
+      ctx.lineTo(rx + rw, ry + rh - r);
+      ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - r, ry + rh);
+      ctx.lineTo(rx + r, ry + rh);
+      ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - r);
+      ctx.lineTo(rx, ry + r);
+      ctx.quadraticCurveTo(rx, ry, rx + r, ry);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      clearGlow();
+      
+      // 定时发票特殊效果：旋转
+      if (food.isTimer) {
+        ctx.save();
+        ctx.rotate(timestamp / 500);
+      }
+      
+      // 显示图标（如果有）或分数
+      if (food.icon) {
+        ctx.font = `${GRID - 4}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(food.icon, 0, 0);
+      } else {
+        ctx.fillStyle = food.border;
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`+${food.score}`, 0, 0);
+      }
+      
+      // 定时发票恢复旋转状态
+      if (food.isTimer) {
+        ctx.restore();
+      }
+      
+      ctx.restore();
+    }
+    clearGlow();
+  }
+
+  function drawDanmaku() {
+    for (const d of danmakuList) {
+      ctx.save();
+      ctx.translate(d.x, d.y);
+      ctx.scale(d.scale, d.scale);
+      ctx.globalAlpha = d.opacity;
+      setGlow(d.color, 15);
+      ctx.fillStyle = d.color;
+      ctx.font = 'bold 14px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(d.text, 0, 0);
+      ctx.restore();
+    }
+    clearGlow();
+  }
+
+  function updateShake(timestamp) {
+    if (shakeDuration > 0) {
+      shakeDuration -= 16;
+      const intensity = Math.min(shakeDuration / 50, 1) * 4;
+      shakeOffset.x = (Math.random() - 0.5) * intensity * 2;
+      shakeOffset.y = (Math.random() - 0.5) * intensity * 2;
+    } else {
+      shakeOffset.x = 0; shakeOffset.y = 0;
+    }
+  }
+
+  function draw(timestamp) {
+    ctx.save();
+    ctx.translate(shakeOffset.x, shakeOffset.y);
+    drawBackground(timestamp);
+    drawFoods(timestamp);
+    drawAISnake(timestamp);  // 绘制审计员
+    drawSnake(timestamp);
+    drawParticles();
+    drawDanmaku();
+    ctx.restore();
+    drawBroadcast(timestamp);  // 播报文字（不受震动影响）
+  }
+
+  function gameLoop(timestamp) {
+    if (!gameRunning) return;
+
+    // 暂停状态：只绘制，不更新
+    if (isPaused) {
+      draw(timestamp);
+      drawBroadcast(timestamp);
+      animFrameId = requestAnimationFrame(gameLoop);
+      return;
+    }
+
+    updateShake(timestamp);
+    updateDanmaku(timestamp);
+    updateParticles(timestamp);
+    
+    // 磁铁效果：吸引周围4格内的发票向玩家头部移动，到达后自动收集
+    if (timestamp < magnetUntil && snake.length > 0) {
+      const headX = snake[0].x, headY = snake[0].y;
+      for (let fi = foods.length - 1; fi >= 0; fi--) {
+        const food = foods[fi];
+        const dx = headX - food.x;
+        const dy = headY - food.y;
+        const dist = Math.abs(dx) + Math.abs(dy);
+        if (dist <= 4 && dist > 0) {
+          // 向玩家方向移动1格
+          if (Math.abs(dx) >= Math.abs(dy)) {
+            food.x += dx > 0 ? 1 : -1;
+          } else {
+            food.y += dy > 0 ? 1 : -1;
+          }
+          // 如果发票到达玩家位置，立即收集
+          if (food.x === headX && food.y === headY) {
+            const grew = collectFoodAt(headX, headY, timestamp);
+            if (grew) {
+              // 磁铁吸来的普通发票也让玩家增长
+              const tail = snake[snake.length - 1];
+              snake.push({ x: tail.x, y: tail.y, angle: 0, swingOffset: 0 });
+            }
+          }
+        }
+      }
+    }
+    
+    updateAISnake(timestamp);  // 更新审计员
+    update(timestamp);
+    draw(timestamp);
+    
+    // 更新审计员出生倒计时显示
+    const elapsed = timestamp - aiSpawnTimer;
+    const remaining = Math.max(0, Math.ceil((AI_SPAWN_INTERVAL - elapsed) / 1000));
+    const timerDisplay = document.getElementById('aiTimerValue');
+    if (timerDisplay) {
+      timerDisplay.textContent = `${remaining}s`;
+      // 越接近出生时间颜色越红
+      if (remaining <= 10) {
+        timerDisplay.style.color = '#ff0000';
+        timerDisplay.style.textShadow = '0 0 10px #ff0000';
+      } else if (remaining <= 20) {
+        timerDisplay.style.color = '#ff6b6b';
+        timerDisplay.style.textShadow = '0 0 8px #ff6b6b';
+      } else {
+        timerDisplay.style.color = '#ff6b6b';
+        timerDisplay.style.textShadow = '0 0 5px rgba(255,107,107,0.5)';
+      }
+    }
+    
+    // 更新道具状态HUD
+    const shieldDisplay = document.getElementById('shieldDisplay');
+    if (shieldDisplay) shieldDisplay.style.display = playerShield ? 'flex' : 'none';
+    
+    const magnetDisplay = document.getElementById('magnetDisplay');
+    if (magnetDisplay) {
+      if (timestamp < magnetUntil) {
+        magnetDisplay.style.display = 'flex';
+        document.getElementById('magnetTime').textContent = Math.ceil((magnetUntil - timestamp) / 1000);
+      } else {
+        magnetDisplay.style.display = 'none';
+      }
+    }
+    
+    animFrameId = requestAnimationFrame(gameLoop);
+  }
+
+  function gameOver() {
+    gameRunning = false;
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+    // 同步游戏结束状态到服务器
+    updateServerScore('gameover');
+
+    // 重置审计员状态
+    aiSnakes = [];
+    aiSpawnTimer = 0;
+
+    // 计算段位和激励信息
+    const finalRank = getCurrentRank(score);
+    const rankIndex = RANKS.indexOf(finalRank);
+    const nextRank = rankIndex < RANKS.length - 1 ? RANKS[rankIndex + 1] : null;
+    const pointsToNext = nextRank ? nextRank.minScore - score : 0;
+    
+    // 获取历史最高分（用于判断是否上榜）
+    const playerName = document.getElementById('playerNameInput').value.trim();
+    let personalBest = 0;
+    let leaderboardMin = 0;
+    
+    // 计算个人历史最高
+    historyLeaderboard.forEach(r => {
+      if (r.name === playerName && r.score > personalBest) {
+        personalBest = r.score;
+      }
+    });
+    
+    // 计算上榜门槛（第10名分数）
+    const sortedScores = [...historyLeaderboard].sort((a, b) => b.score - a.score);
+    if (sortedScores.length >= 10) {
+      leaderboardMin = sortedScores[9].score;
+    } else if (sortedScores.length > 0) {
+      leaderboardMin = sortedScores[sortedScores.length - 1].score;
+    }
+    
+    const pointsToLeaderboard = Math.max(0, leaderboardMin - score + 1);
+    const isNewRecord = score > personalBest;
+    
+    // 生成激励方案
+    let motivation = '';
+    if (score < 100) {
+      motivation = '💡 建议：多收集发票，避开审计员，练习走位技巧！';
+    } else if (score < 300) {
+      motivation = '💡 建议：尝试连续吃发票触发连击，分数翻倍！';
+    } else if (score < 600) {
+      motivation = '💡 建议：主动出击消灭审计员，获取高额战利品！';
+    } else if (score < 1000) {
+      motivation = '💡 建议：保持连击节奏，优先吃高价值发票！';
+    } else {
+      motivation = '💡 建议：你已经很强了！挑战更高连击，冲击财神段位！';
+    }
+    
+    // 构建游戏结束信息
+    let rankInfo = `<div style="margin: 15px 0; padding: 15px; background: linear-gradient(135deg, ${finalRank.bodyGlow.replace('0.5)', '0.2)')}, rgba(0,0,0,0.3)); border-radius: 12px; border: 1px solid ${finalRank.bodyColor};">`;
+    rankInfo += `<div style="font-size: 32px; margin-bottom: 5px;">${finalRank.headIcon}</div>`;
+    rankInfo += `<div style="font-size: 18px; font-weight: bold; color: ${finalRank.bodyColor}; text-shadow: 0 0 10px ${finalRank.bodyGlow};">${finalRank.name}</div>`;
+    rankInfo += `<div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">${finalRank.title}</div>`;
+    
+    if (nextRank) {
+      rankInfo += `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">`;
+      rankInfo += `<div style="font-size: 11px; color: #64748b;">距离 <span style="color: ${nextRank.bodyColor};">${nextRank.name}</span> 还需 <span style="color: #fbbf24; font-weight: bold;">${pointsToNext}</span> 分</div>`;
+      rankInfo += `<div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 8px; overflow: hidden;">`;
+      const progress = Math.min(100, (score - finalRank.minScore) / (nextRank.minScore - finalRank.minScore) * 100);
+      rankInfo += `<div style="width: ${progress}%; height: 100%; background: linear-gradient(90deg, ${finalRank.bodyColor}, ${nextRank.bodyColor}); border-radius: 3px;"></div>`;
+      rankInfo += `</div></div>`;
+    } else {
+      rankInfo += `<div style="margin-top: 10px; font-size: 12px; color: #fde047;">🏆 已达最高段位！</div>`;
+    }
+    rankInfo += `</div>`;
+    
+    // 上榜信息
+    let leaderboardInfo = '';
+    if (pointsToLeaderboard > 0) {
+      leaderboardInfo = `<div style="margin: 10px 0; padding: 10px; background: rgba(251,191,36,0.1); border-radius: 8px; border: 1px solid rgba(251,191,36,0.3);">`;
+      leaderboardInfo += `<div style="font-size: 13px; color: #fbbf24;">📊 距离上榜还差 <span style="font-weight: bold; font-size: 16px;">${pointsToLeaderboard}</span> 分</div>`;
+      leaderboardInfo += `</div>`;
+    } else {
+      leaderboardInfo = `<div style="margin: 10px 0; padding: 10px; background: rgba(74,222,128,0.1); border-radius: 8px; border: 1px solid rgba(74,222,128,0.3);">`;
+      leaderboardInfo += `<div style="font-size: 13px; color: #4ade80;">🎉 恭喜！你已登上排行榜！</div>`;
+      leaderboardInfo += `</div>`;
+    }
+    
+    // 新纪录提示
+    if (isNewRecord && personalBest > 0) {
+      leaderboardInfo += `<div style="margin: 10px 0; padding: 10px; background: rgba(192,132,252,0.1); border-radius: 8px; border: 1px solid rgba(192,132,252,0.3);">`;
+      leaderboardInfo += `<div style="font-size: 13px; color: #c084fc;">🔥 新纪录！超越了之前的 ¥${personalBest}</div>`;
+      leaderboardInfo += `</div>`;
+    }
+    
+    // 激励方案
+    const motivationHtml = `<div style="margin: 10px 0; padding: 12px; background: rgba(59,130,246,0.1); border-radius: 8px; border-left: 3px solid #3b82f6; font-size: 12px; color: #93c5fd; line-height: 1.5;">${motivation}</div>`;
+    
+    document.getElementById('rejectReason').textContent = REJECT_MESSAGES[rand(0, REJECT_MESSAGES.length - 1)];
+    document.getElementById('finalScore').textContent = `¥${score}`;
+    document.getElementById('finalDetail').innerHTML = `共处理 ${invoiceCount} 张发票 · 速度×${speedMultiplier.toFixed(1)}<br>${rankInfo}${leaderboardInfo}${motivationHtml}`;
+    
+    // 自动带入开始时的名字到游戏结束输入框
+    const startName = document.getElementById('playerNameInput').value.trim();
+    const gameOverNameInput = document.getElementById('gameOverNameInput');
+    gameOverNameInput.value = startName;
+    
+    // 自动保存分数到历史高分榜（使用已有的playerName变量）
+    if (playerName && score > 0) {
+      addToHistoryLeaderboard(playerName, score, invoiceCount);
+    }
+    
+    // 隐藏录入区域（改为自动保存，无需手动确认）
+    document.getElementById('nameInputArea').style.display = 'none';
+    // 清除之前可能添加的成功提示
+    const existingMsg = document.querySelector('#gameOverScreen div[style*="已录入排行榜"]');
+    if (existingMsg) existingMsg.remove();
+    
+    // 添加自动保存提示
+    const autoSaveMsg = document.createElement('div');
+    autoSaveMsg.textContent = '✅ 分数已自动保存到排行榜！';
+    autoSaveMsg.style.cssText = 'color: #4ade80; font-size: 14px; margin-top: 10px;';
+    document.getElementById('nameInputArea').insertAdjacentElement('beforebegin', autoSaveMsg);
+    
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+  }
+
+  async function startGame() {
+    const nameInput = document.getElementById('playerNameInput');
+    const name = nameInput.value.trim();
+
+    // 强制要求输入姓名
+    if (!name || name.length < 2 || name.length > 8) {
+      alert('⚠️ 请先输入您的名字（2-8个字符）！');
+      nameInput.focus();
+      nameInput.style.borderColor = '#f87171';
+      nameInput.style.boxShadow = '0 0 15px rgba(248,113,113,0.5)';
+      setTimeout(() => {
+        nameInput.style.borderColor = '';
+        nameInput.style.boxShadow = '';
+      }, 2000);
+      return;
+    }
+
+    // 注册玩家
+    const registered = await registerPlayer(name);
+    if (!registered) {
+      alert('连接服务器失败，请检查网络');
+      return;
+    }
+
+    initGame();
+    
+    // 初始化音效系统并播放背景音乐
+    initAudio();
+    playBackgroundMusic();
+    
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    gameRunning = true;
+    isPaused = false;
+    lastMoveTime = 0;
+    foodSpawnTimer = performance.now();  // 初始化发票生成计时器
+    currentRank = RANKS[0];  // 重置段位
+    updateRankDisplay();  // 更新段位显示
+    
+    // 游戏开始爆闪提示
+    showBroadcast('🔥 游戏开始！GO！', '#4ade80', 1500, { isFlash: true, fontSize: 48, position: 'center' });
+    
+    animFrameId = requestAnimationFrame(gameLoop);
+  }
+
+  function setDirection(dir) {
+    switch (dir) {
+      case 'up': if (direction.y !== 1) nextDirection = { x: 0, y: -1 }; break;
+      case 'down': if (direction.y !== -1) nextDirection = { x: 0, y: 1 }; break;
+      case 'left': if (direction.x !== 1) nextDirection = { x: -1, y: 0 }; break;
+      case 'right': if (direction.x !== -1) nextDirection = { x: 1, y: 0 }; break;
+    }
+  }
+
+  // ============================================================
+  // 暂停系统
+  // ============================================================
+  let isPaused = false;
+
+  function togglePause() {
+    if (!gameRunning) return;
+    isPaused = !isPaused;
+    if (isPaused) {
+      showBroadcast('⏸ 游戏已暂停', '#fbbf24', 999999, { isFlash: false, fontSize: 36, position: 'center' });
+    } else {
+      broadcastMessage = null;  // 清除暂停提示
+      lastMoveTime = performance.now();  // 重置移动计时，避免暂停后瞬间移动
+      showBroadcast('▶ 继续游戏！', '#4ade80', 800, { isFlash: true, fontSize: 36, position: 'center' });
+    }
+  }
+
+  function muteToggle() {
+    if (typeof audioCtx !== 'undefined' && audioCtx) {
+      if (audioCtx.state === 'running') {
+        audioCtx.suspend();
+        showBroadcast('🔇 已静音', '#94a3b8', 1000, { isFlash: false, fontSize: 24, position: 'top' });
+      } else {
+        audioCtx.resume();
+        showBroadcast('🔊 已取消静音', '#94a3b8', 1000, { isFlash: false, fontSize: 24, position: 'top' });
+      }
+    }
+  }
+
+  // 事件监听
+  document.addEventListener('keydown', (e) => {
+    const keyMap = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
+
+    // 暂停/继续：Esc 或 P
+    if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      togglePause();
+      return;
+    }
+
+    // 静音切换：M
+    if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      muteToggle();
+      return;
+    }
+
+    // 暂停状态下阻止其他按键
+    if (isPaused) { e.preventDefault(); return; }
+
+    // 方向控制
+    if (keyMap[e.key]) { e.preventDefault(); if (gameRunning) setDirection(keyMap[e.key]); }
+  });
+
+  // 移动端触摸事件处理
+  const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  
+  // 方向按钮 - 支持长按连续转向
+  document.querySelectorAll('.d-btn').forEach(btn => {
+    let holdTimer = null;
+    
+    const onPress = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      btn.classList.add('pressed');
+      if (gameRunning) setDirection(btn.dataset.dir);
+    };
+    
+    const onRelease = (e) => {
+      e.preventDefault();
+      btn.classList.remove('pressed');
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+    };
+    
+    btn.addEventListener('touchstart', onPress, { passive: false });
+    btn.addEventListener('touchend', onRelease, { passive: false });
+    btn.addEventListener('touchcancel', onRelease, { passive: false });
+    btn.addEventListener('mousedown', onPress);
+    btn.addEventListener('mouseup', onRelease);
+    btn.addEventListener('mouseleave', onRelease);
+  });
+
+  // Canvas滑动手势控制方向
+  let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+  let isSwiping = false;
+  
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
+    isSwiping = false;
+  }, { passive: false });
+  
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!gameRunning) return;
+    
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    const absDx = Math.abs(dx), absDy = Math.abs(dy);
+    
+    // 滑动超过15px就触发方向（降低阈值，更灵敏）
+    if (Math.max(absDx, absDy) > 15 && !isSwiping) {
+      isSwiping = true;
+      setDirection(absDx > absDy ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+      // 更新起始点，支持连续滑动转向
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      isSwiping = false;
+    }
+  }, { passive: false });
+  
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+  }, { passive: false });
+
+  // 防止整个页面的触摸滚动和缩放
+  document.body.addEventListener('touchmove', (e) => {
+    if (gameRunning) e.preventDefault();
+  }, { passive: false });
+  
+  // 防止双击缩放
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('restartBtn').addEventListener('click', startGame);
+  
+  // 游戏结束时确认录入姓名
+  document.getElementById('confirmNameBtn').addEventListener('click', async () => {
+    const nameInput = document.getElementById('gameOverNameInput');
+    const newName = nameInput.value.trim();
+    if (newName.length >= 2 && newName.length <= 8) {
+      await updatePlayerName(newName);
+      // 同时保存到服务器历史高分榜
+      await addToHistoryLeaderboard(newName, score, invoiceCount);
+      document.getElementById('nameInputArea').style.display = 'none';
+      // 显示录入成功提示
+      const successMsg = document.createElement('div');
+      successMsg.textContent = '✅ 已录入排行榜！';
+      successMsg.style.cssText = 'color: #4ade80; font-size: 14px; margin-top: 10px;';
+      document.getElementById('nameInputArea').insertAdjacentElement('beforebegin', successMsg);
+    } else {
+      alert('请输入2-8个字符的姓名');
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    if (!gameRunning) drawBackground(performance.now());
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      resizeCanvas();
+      if (!gameRunning) drawBackground(performance.now());
+    }, 100);
+  });
+
+  // 页面关闭时通知服务器
+  window.addEventListener('beforeunload', () => { leaveGame(); });
+
+  // 初始化
+  resizeCanvas();
+  drawBackground(performance.now());
+  
+  // 从服务器加载历史高分榜
+  loadHistoryLeaderboard();
+  // 渲染侧边栏历史榜
+  renderHistoryInSidebar();
+
+  // 连接SSE
+  connectEventSource();
+
+})();
+</script>
+</body>
+</html>

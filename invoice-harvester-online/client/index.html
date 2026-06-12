@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>发票收割者</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="stars"></div>
+
+  <div class="container">
+    <!-- 标题 -->
+    <header class="header">
+      <h1>🧾 发票收割者</h1>
+      <p class="subtitle">财务人的噩梦 v2.0</p>
+    </header>
+
+    <!-- 模式选择区域 -->
+    <div id="modeSection" class="section">
+      <div class="card">
+        <h2>🎮 选择游戏模式</h2>
+        <div class="input-group" style="margin-bottom: 20px;">
+          <input type="text" id="playerName" placeholder="输入你的昵称" maxlength="10">
+        </div>
+        <div class="mode-cards">
+          <div class="mode-card" id="singlePlayerCard">
+            <div class="mode-icon">🐍</div>
+            <div class="mode-title">单机模式</div>
+            <div class="mode-desc">独自挑战AI审计员，收割发票！</div>
+            <button id="singlePlayerBtn" class="btn btn-primary btn-large">开始游戏</button>
+          </div>
+          <div class="mode-card" id="onlineCard">
+            <div class="mode-icon">🌐</div>
+            <div class="mode-title">联机对战</div>
+            <div class="mode-desc">与其他玩家实时对战！</div>
+            <button id="onlineBtn" class="btn btn-success btn-large">进入大厅</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 大厅区域 -->
+    <div id="lobbySection" class="section hidden">
+      <div class="lobby-header">
+        <div class="player-info">
+          <span>👤 <span id="displayName"></span></span>
+          <button id="backToModeBtn" class="btn btn-secondary btn-sm">← 返回</button>
+        </div>
+        <div class="lobby-actions">
+          <button id="createRoomBtn" class="btn btn-primary">🏠 创建房间</button>
+          <button id="refreshBtn" class="btn btn-secondary">🔄 刷新</button>
+        </div>
+      </div>
+
+      <!-- 房间列表 -->
+      <div class="card">
+        <h3>📋 房间列表</h3>
+        <div id="roomList" class="room-list">
+          <div class="empty">暂无房间，点击"创建房间"开始游戏</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 创建房间弹窗 -->
+    <div id="createRoomModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>🏠 创建房间</h2>
+        <div class="input-group" style="flex-direction: column; gap: 12px;">
+          <input type="text" id="roomNameInput" placeholder="输入房间名称（可选）" maxlength="20">
+          <div class="modal-actions">
+            <button id="confirmCreateRoomBtn" class="btn btn-success btn-large">创建</button>
+            <button id="cancelCreateRoomBtn" class="btn btn-secondary btn-large">取消</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 房间区域 -->
+    <div id="roomSection" class="section hidden">
+      <div class="card">
+        <div class="room-header">
+          <h2>🏠 <span id="roomName"></span> <span id="roomId" class="room-id-small"></span></h2>
+          <button id="leaveRoomBtn" class="btn btn-danger">离开</button>
+        </div>
+
+        <!-- 玩家列表 -->
+        <div class="players-list" id="playersList">
+          <!-- 动态生成 -->
+        </div>
+
+        <!-- 房主控制 -->
+        <div id="hostControls" class="host-controls hidden">
+          <button id="startGameBtn" class="btn btn-success btn-large">🎮 开始游戏</button>
+          <p class="hint">等待所有玩家准备...</p>
+        </div>
+
+        <!-- 普通玩家控制 -->
+        <div id="playerControls" class="player-controls">
+          <button id="readyBtn" class="btn btn-primary btn-large">✅ 准备</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 单机游戏区域（初始隐藏） -->
+  <div id="singleGameSection" class="game-section hidden">
+    <div class="game-container">
+      <div class="game-info">
+        <div class="score-board single-score">
+          <div id="spScore" class="score-item">
+            <span class="name">得分</span>
+            <span class="score">0</span>
+          </div>
+          <div id="spInvoices" class="score-item">
+            <span class="name">发票</span>
+            <span class="score">0</span>
+          </div>
+          <div id="spSpeed" class="score-item">
+            <span class="name">速度</span>
+            <span class="score">x1.0</span>
+          </div>
+        </div>
+        <button id="spQuitBtn" class="btn btn-danger">退出</button>
+      </div>
+      <canvas id="singleGameCanvas" width="700" height="560"></canvas>
+      <div class="game-controls">
+        <p>使用方向键或 WASD 控制移动，P 暂停</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 单机游戏结束弹窗 -->
+  <div id="spGameOverModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="spGameOverTitle">游戏结束</h2>
+      <div id="spGameOverResult"></div>
+      <div class="modal-actions">
+        <button id="spRetryBtn" class="btn btn-primary">再来一局</button>
+        <button id="spBackBtn" class="btn btn-secondary">返回主页</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 联机游戏画布（初始隐藏） -->
+  <div id="gameSection" class="game-section hidden">
+    <div class="game-container">
+      <div class="game-info">
+        <div class="score-board">
+          <div id="player1Score" class="score-item">
+            <span class="name">玩家1</span>
+            <span class="score">0</span>
+          </div>
+          <div class="vs">VS</div>
+          <div id="player2Score" class="score-item">
+            <span class="name">玩家2</span>
+            <span class="score">0</span>
+          </div>
+        </div>
+        <button id="quitGameBtn" class="btn btn-danger">退出</button>
+      </div>
+      <canvas id="gameCanvas" width="700" height="560"></canvas>
+      <div class="game-controls">
+        <p>使用方向键或 WASD 控制移动</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 联机游戏结束弹窗 -->
+  <div id="gameOverModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="gameOverTitle">游戏结束</h2>
+      <div id="gameOverResult"></div>
+      <button id="backToLobbyBtn" class="btn btn-primary">返回大厅</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/single-player.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
