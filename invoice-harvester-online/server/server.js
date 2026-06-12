@@ -470,7 +470,13 @@ function startGameLoop(room) {
 
 // 启动服务器
 const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
-  console.log(`🎮 发票收割者服务器运行在端口 ${PORT}`);
-  console.log(`📁 游戏大厅: http://localhost:${PORT}`);
-});
+
+// Vercel serverless 适配
+if (process.env.VERCEL) {
+  module.exports = httpServer;
+} else {
+  httpServer.listen(PORT, () => {
+    console.log(`🎮 发票收割者服务器运行在端口 ${PORT}`);
+    console.log(`📁 游戏大厅: http://localhost:${PORT}`);
+  });
+}
