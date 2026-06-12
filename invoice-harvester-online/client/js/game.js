@@ -94,7 +94,18 @@ function generatePlayerName() {
 
 // ==================== Socket 连接 ====================
 function initSocket() {
-  state.socket = io();
+  // 配置 Socket.IO 服务器地址
+  // 生产环境使用 Render 部署的服务器，开发环境使用本地服务器
+  const serverUrl = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : 'https://invoice-harvester-server.onrender.com';
+
+  state.socket = io(serverUrl, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000
+  });
 
   // 连接成功
   state.socket.on('connect', () => {

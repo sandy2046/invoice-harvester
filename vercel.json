@@ -1,19 +1,16 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "invoice-harvester-online/server/server.js",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
     {
-      "src": "/socket.io/(.*)",
-      "dest": "invoice-harvester-online/server/server.js"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "invoice-harvester-online/server/server.js"
+      "dest": "/invoice-harvester-online/client/$1"
     }
   ]
 }
